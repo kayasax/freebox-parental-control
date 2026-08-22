@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Contrôle réseau Freebox",
+        "description": "Saisissez l'adresse locale de votre Freebox. Home Assistant doit être sur le même réseau que la Freebox.",
+        "data": {
+          "host": "Adresse de la Freebox"
+        }
+      },
+      "authorize": {
+        "title": "Validez sur votre Freebox",
+        "description": "Regardez l'écran (LCD) en façade de la Freebox et appuyez sur la flèche droite, puis OK pour autoriser l'accès. Cliquez ensuite sur Valider pour continuer."
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de joindre la Freebox. Vérifiez l'adresse et que Home Assistant est sur le même réseau.",
+      "invalid_auth": "La Freebox a refusé le jeton. Réessayez.",
+      "awaiting_confirmation": "En attente de votre confirmation sur l'écran de la Freebox. Appuyez sur la flèche + OK, puis validez à nouveau.",
+      "authorization_failed": "Autorisation refusée ou expirée. Recommencez la configuration et confirmez sur la box."
+    },
+    "abort": {
+      "already_configured": "Cette Freebox est déjà configurée."
+    }
+  }
+}

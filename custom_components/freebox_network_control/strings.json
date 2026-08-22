@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Freebox Network Control",
+        "description": "Enter your Freebox local address. Home Assistant must be on the same network as the Freebox.",
+        "data": {
+          "host": "Freebox address"
+        }
+      },
+      "authorize": {
+        "title": "Approve on your Freebox",
+        "description": "Look at the Freebox front panel (LCD screen) and press the right arrow, then OK to grant access. Then submit to continue."
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the Freebox. Check the address and that Home Assistant is on the same LAN.",
+      "invalid_auth": "The Freebox rejected the token. Try again.",
+      "awaiting_confirmation": "Still waiting for you to confirm on the Freebox LCD screen. Press the arrow + OK, then submit again.",
+      "authorization_failed": "Authorization was denied or timed out. Restart the setup and confirm on the box."
+    },
+    "abort": {
+      "already_configured": "This Freebox is already configured."
+    }
+  }
+}

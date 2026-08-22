@@ -1,0 +1,54 @@
+"""DataUpdateCoordinator for Freebox network-control profiles."""
+
+from __future__ import annotations
+
+import logging
+from datetime import timedelta
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from .api import FreeboxAuthError, FreeboxClient, FreeboxError
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class FreeboxProfilesCoordinator(DataUpdateCoordinator[dict[int, dict]]):
+    """Fetch all profiles + their network-control state on a single pass."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        client: FreeboxClient,
+    ) -> None:
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+        )
+        self.entry = entry
+        self.client = client
+        self._names_cache: dict[str, str] = {}
+
+    async def _async_update_data(self) -> dict[int, dict]:
+        try:
+            profiles = await self.client.profiles()
+            # Device-name resolution is best-effort; failures must not break the pass.
+            try:
+                self._names_cache = await self.client.lan_device_names()
+            except FreeboxError as err:
+                _LOGGER.debug("LAN name resolution failed: %s", err)
+        except FreeboxAuthError as err:
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except FreeboxError as err:
+            raise UpdateFailed(str(err)) from err
+
+        return {int(p["id"]): p for p in profiles if p.get("id") is not None}
+
+    def device_names_for(self, macs: list[str]) -> list[str]:
+        return [self._names_cache.get(m.lower(), m) for m in macs or []]
