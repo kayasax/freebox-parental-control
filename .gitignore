@@ -14,3 +14,6 @@ deploy_to_ha.py
 
 # Local dashboard artifact (not part of the integration)
 dashboard_freebox_profils.json
+
+# Local exploration script (contains secrets)
+explore_api.py

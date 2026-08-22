@@ -68,9 +68,12 @@ class FreeboxProfileDevicesSensor(
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        details = self.coordinator.device_details_for(self._profile_id)
         return {
             "profile_id": self._profile_id,
-            "devices": self.coordinator.device_names_for(self._macs),
+            "online_count": sum(1 for d in details if d["online"]),
+            "devices": [d["name"] for d in details],
+            "device_status": details,
             "macs": self._macs,
         }
 

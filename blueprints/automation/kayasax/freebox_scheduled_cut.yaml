@@ -1,0 +1,89 @@
+blueprint:
+  name: "Freebox – Scheduled Internet cut for a profile"
+  description: >-
+    Cut a Freebox Parental Control profile's Internet between two times on
+    selected days, and restore it afterwards. Ideal for a bedtime or homework
+    window (e.g. cut every school night from 21:00 to 07:00).
+
+
+    The restore always runs at the chosen time so Internet is never left off by
+    accident. Requires the "Freebox Parental Control" integration.
+  domain: automation
+  source_url: https://github.com/kayasax/freebox-parental-control/blob/main/blueprints/automation/kayasax/freebox_scheduled_cut.yaml
+  input:
+    profile_switch:
+      name: Profile
+      description: The Freebox Parental Control switch of the profile to cut.
+      selector:
+        entity:
+          integration: freebox_network_control
+          domain: switch
+    cut_start:
+      name: Cut time
+      description: Time at which Internet is cut (on the selected days).
+      selector:
+        time: {}
+    cut_end:
+      name: Restore time
+      description: Time at which Internet is restored.
+      selector:
+        time: {}
+    days:
+      name: Days
+      description: Days the cut applies. The restore always runs.
+      default:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+        - sat
+        - sun
+      selector:
+        select:
+          multiple: true
+          mode: list
+          options:
+            - label: Monday
+              value: mon
+            - label: Tuesday
+              value: tue
+            - label: Wednesday
+              value: wed
+            - label: Thursday
+              value: thu
+            - label: Friday
+              value: fri
+            - label: Saturday
+              value: sat
+            - label: Sunday
+              value: sun
+
+mode: single
+
+trigger:
+  - platform: time
+    at: !input cut_start
+    id: cut
+  - platform: time
+    at: !input cut_end
+    id: restore
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: cut
+          - condition: time
+            weekday: !input days
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input profile_switch
+      - conditions:
+          - condition: trigger
+            id: restore
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input profile_switch

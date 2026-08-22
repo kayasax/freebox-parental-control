@@ -31,7 +31,11 @@ class FreeboxError(Exception):
 
 
 class FreeboxAuthError(FreeboxError):
-    """Authentication/authorization failed (bad or revoked app_token)."""
+    """App token is invalid/revoked — fatal, requires re-authorization."""
+
+
+class FreeboxSessionExpired(FreeboxError):
+    """The session token expired (auth_required). Retryable via re-login."""
 
 
 class FreeboxRightsError(FreeboxError):
@@ -63,7 +67,11 @@ class FreeboxClient:
 
     # ---- low-level HTTP ----------------------------------------------------
     async def _request(
-        self, method: str, url: str, payload: dict | None = None
+        self,
+        method: str,
+        url: str,
+        payload: dict | None = None,
+        allow_reauth: bool = True,
     ) -> dict:
         headers = {"Content-Type": "application/json"}
         if self._session_token:
@@ -87,8 +95,19 @@ class FreeboxClient:
             msg = body.get("msg", "unknown error")
             if code == "insufficient_rights":
                 raise FreeboxRightsError(f"{code}: {msg}")
-            if code in ("auth_required", "invalid_token"):
+            if code == "invalid_token":
                 raise FreeboxAuthError(f"{code}: {msg}")
+            if code == "auth_required":
+                # Session token expired. Transparently re-login once and retry,
+                # unless this IS a login call (avoid recursion) or we already
+                # retried.
+                if allow_reauth and self._app_token and "/login" not in url:
+                    self._session_token = ""
+                    await self.open_session()
+                    return await self._request(
+                        method, url, payload, allow_reauth=False
+                    )
+                raise FreeboxSessionExpired(f"{code}: {msg}")
             raise FreeboxError(f"{code}: {msg}")
         return body
 

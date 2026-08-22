@@ -1,0 +1,22 @@
+cut_for:
+  name: Cut Internet for a duration
+  description: >-
+    Cut a profile's Internet access for a bounded number of minutes, then
+    automatically restore it (uses the Freebox override_until).
+  target:
+    entity:
+      integration: freebox_network_control
+      domain: switch
+  fields:
+    minutes:
+      name: Minutes
+      description: How long to cut Internet before automatic restore.
+      required: true
+      example: 30
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: min
+          mode: box

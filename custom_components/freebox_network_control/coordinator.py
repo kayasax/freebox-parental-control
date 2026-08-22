@@ -66,3 +66,30 @@ class FreeboxProfilesCoordinator(DataUpdateCoordinator[dict[int, dict]]):
 
     def device_names_for(self, macs: list[str]) -> list[str]:
         return [self._names_cache.get(m.lower(), m) for m in macs or []]
+
+    def device_details_for(self, profile_id: int) -> list[dict]:
+        """Per-device info for a profile: name + online status.
+
+        Uses the rich ``hosts`` array returned by network_control, falling back
+        to bare MACs when hosts are unavailable.
+        """
+        prof = self.data.get(profile_id, {})
+        nc = prof.get("network_control") or {}
+        hosts = nc.get("hosts") or []
+        if hosts:
+            details = []
+            for h in hosts:
+                mac = (h.get("l2ident") or {}).get("id", "")
+                details.append(
+                    {
+                        "name": h.get("primary_name")
+                        or self._names_cache.get(mac.lower(), mac),
+                        "online": bool(h.get("active") or h.get("reachable")),
+                        "mac": mac,
+                    }
+                )
+            return sorted(details, key=lambda d: (not d["online"], d["name"].lower()))
+        return [
+            {"name": self._names_cache.get(m.lower(), m), "online": False, "mac": m}
+            for m in nc.get("macs") or []
+        ]

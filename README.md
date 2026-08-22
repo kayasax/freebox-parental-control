@@ -97,16 +97,52 @@ The profile switches and device sensors appear within a minute.
 
 ## Usage
 
-Once set up, use the profile switches in automations, scripts, or dashboards —
-for example cut a child's Internet on a schedule, or from a button. The device
-sensor lets you see (and automate on) which devices belong to each profile.
+### Switches — cut / restore Internet
+
+Each profile has a `switch.<profile>_internet`: **on = Internet allowed**, turn
+it off to cut, on to restore. Use it in automations, scripts, dashboards or a
+physical button.
+
+### Device sensors — who is in each profile
+
+Each profile has a `sensor.<profile>_devices` whose state is the device count.
+Its attributes include:
+
+- `online_count` — how many of the profile's devices are currently online;
+- `device_status` — a list of `{name, online, mac}` for each assigned device;
+- `devices` / `macs` — plain name and MAC lists.
+
+A ready-made dashboard (see `dashboard_freebox_profils.json` in the repo) lists
+each profile's devices with a 🟢/⚫ online indicator.
+
+### Timed cut — `cut_for` service
+
+To cut a profile for a bounded time with automatic restore, call the
+`freebox_network_control.cut_for` service on a profile switch:
+
+```yaml
+service: freebox_network_control.cut_for
+target:
+  entity_id: switch.elyas_internet
+data:
+  minutes: 45
+```
+
+### Scheduling assistant — blueprint
+
+Import the **"Freebox – Scheduled Internet cut for a profile"** blueprint
+(`blueprints/automation/kayasax/freebox_scheduled_cut.yaml`) to cut a profile
+between two times on selected days (e.g. every school night 21:00 → 07:00). In
+Home Assistant this is more flexible than the Freebox's own schedule because
+you can add any HA condition (presence, holidays, helpers…).
 
 ## Roadmap
 
-- **Phase A (current)** — switches + device sensors, config flow. ✅
-- **Phase B** — assign/remove devices to a profile, bounded cut duration,
-  schedule editing.
-- **Phase C** — upstream async `network_control` / `profile` support to
+- **Phase A** — switches + device sensors, config flow. ✅
+- **Phase B** — per-device online status, timed cut (`cut_for`), scheduling
+  blueprint. ✅
+- **Phase C** — device assignment service, profile CRUD, and upstreaming async
+  `network_control` / `profile` support to
   [`freebox-api`](https://github.com/hacf-fr/freebox-api).
 
 ## Credits

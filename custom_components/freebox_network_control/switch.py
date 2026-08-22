@@ -5,8 +5,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import voluptuous as vol
+
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -17,6 +20,8 @@ from .coordinator import FreeboxProfilesCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+SERVICE_CUT_FOR = "cut_for"
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -26,6 +31,15 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     async_add_entities(
         FreeboxProfileSwitch(coordinator, pid) for pid in coordinator.data
+    )
+
+    # Entity service: cut a profile's Internet for a bounded number of minutes,
+    # with automatic restore (Freebox override_until).
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service(
+        SERVICE_CUT_FOR,
+        {vol.Required("minutes"): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440))},
+        "async_cut_for",
     )
 
 
@@ -92,6 +106,13 @@ class FreeboxProfileSwitch(
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Cut Internet for this profile."""
         await self.coordinator.client.set_override(self._profile_id, "denied")
+        await self.coordinator.async_request_refresh()
+
+    async def async_cut_for(self, minutes: int) -> None:
+        """Cut Internet for a bounded duration, then auto-restore."""
+        await self.coordinator.client.set_override(
+            self._profile_id, "denied", minutes
+        )
         await self.coordinator.async_request_refresh()
 
     @callback
