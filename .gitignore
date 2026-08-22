@@ -7,3 +7,7 @@ venv/
 .idea/
 .vscode/
 *.log
+
+# Local test/deploy scripts (contain secrets) - never commit
+test_live.py
+deploy_to_ha.py
