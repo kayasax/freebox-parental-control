@@ -32,6 +32,11 @@ class FreeboxNetworkControlConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             self._host = user_input[CONF_HOST].rstrip("/")
+            # Abort BEFORE registering an app on the Freebox if this box is
+            # already configured — otherwise every re-run would create a new
+            # app token on the box (which the user then has to clean up).
+            await self.async_set_unique_id(self._host)
+            self._abort_if_unique_id_configured()
             session = async_get_clientsession(self.hass)
             self._client = FreeboxClient(session, self._host)
             try:
@@ -73,8 +78,8 @@ class FreeboxNetworkControlConfigFlow(ConfigFlow, domain=DOMAIN):
                     _LOGGER.error("Session with new token failed: %s", err)
                     errors["base"] = "invalid_auth"
                 else:
-                    await self.async_set_unique_id(self._host)
-                    self._abort_if_unique_id_configured()
+                    # unique_id already set in async_step_user (before app
+                    # registration); just create the entry.
                     return self.async_create_entry(
                         title="Freebox Parental Control",
                         data={
