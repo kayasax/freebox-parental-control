@@ -11,3 +11,6 @@ venv/
 # Local test/deploy scripts (contain secrets) - never commit
 test_live.py
 deploy_to_ha.py
+
+# Local dashboard artifact (not part of the integration)
+dashboard_freebox_profils.json
