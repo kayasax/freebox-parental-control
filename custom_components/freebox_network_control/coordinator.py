@@ -10,7 +10,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import FreeboxAuthError, FreeboxClient, FreeboxError
+from .api import (
+    FreeboxAuthError,
+    FreeboxClient,
+    FreeboxError,
+    FreeboxRightsError,
+)
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,6 +48,15 @@ class FreeboxProfilesCoordinator(DataUpdateCoordinator[dict[int, dict]]):
                 self._names_cache = await self.client.lan_device_names()
             except FreeboxError as err:
                 _LOGGER.debug("LAN name resolution failed: %s", err)
+        except FreeboxRightsError as err:
+            # Token is valid but missing the "Modification des réglages" right.
+            # Retryable (no reauth): succeeds automatically once the user grants
+            # it in Freebox OS → Gestion des accès → Applications.
+            raise UpdateFailed(
+                "Freebox app lacks rights. Enable 'Modification des réglages "
+                "de la Freebox' for this app in Freebox OS → Gestion des accès "
+                f"→ Applications. ({err})"
+            ) from err
         except FreeboxAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except FreeboxError as err:

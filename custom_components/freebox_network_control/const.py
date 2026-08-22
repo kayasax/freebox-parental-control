@@ -5,8 +5,10 @@ from __future__ import annotations
 DOMAIN = "freebox_network_control"
 
 # App identity registered on the Freebox (shown on the LCD authorization screen).
-APP_ID = "com.kayasax.gaia.freebox_network_control"
-APP_NAME = "HA Freebox Network Control"
+# NOTE: the Freebox rejects app_id longer than ~32 chars ("app_id is too long"),
+# so keep this short.
+APP_ID = "com.kayasax.freebox_parental"
+APP_NAME = "HA Freebox Parental Control"
 APP_VERSION = "1.0.0"
 DEVICE_NAME = "Home Assistant"
 

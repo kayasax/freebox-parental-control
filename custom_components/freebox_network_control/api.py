@@ -34,6 +34,14 @@ class FreeboxAuthError(FreeboxError):
     """Authentication/authorization failed (bad or revoked app_token)."""
 
 
+class FreeboxRightsError(FreeboxError):
+    """The app token is valid but lacks the required Freebox settings rights.
+
+    Fixed by the user enabling "Modification des réglages de la Freebox" in
+    Freebox OS → Gestion des accès → Applications. Retryable: no re-auth needed.
+    """
+
+
 class FreeboxClient:
     """Minimal async Freebox OS client for profiles + network_control."""
 
@@ -77,7 +85,9 @@ class FreeboxClient:
         if isinstance(body, dict) and body.get("success") is False:
             code = body.get("error_code", "error")
             msg = body.get("msg", "unknown error")
-            if code in ("auth_required", "invalid_token", "insufficient_rights"):
+            if code == "insufficient_rights":
+                raise FreeboxRightsError(f"{code}: {msg}")
+            if code in ("auth_required", "invalid_token"):
                 raise FreeboxAuthError(f"{code}: {msg}")
             raise FreeboxError(f"{code}: {msg}")
         return body

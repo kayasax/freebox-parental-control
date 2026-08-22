@@ -37,6 +37,26 @@ config-flow-driven custom component.
 5. **Walk to your Freebox**: its front LCD screen shows an authorization
    request — press the **right arrow**, then **OK** to grant access. Back in
    Home Assistant, submit the second step to finish.
+6. **Grant the app the required rights in Freebox OS** (mandatory — see below),
+   otherwise the switches will fail with `insufficient_rights`.
+
+## Grant "Modification des réglages" rights (required)
+
+Approving the request on the LCD screen only creates the app; by default the
+Freebox grants it **minimal** rights, which are **not** enough to change
+network-control. You must enable the settings-modification right once:
+
+1. Open **http://mafreebox.freebox.fr** and sign in.
+2. Go to **Paramètres de la Freebox → Gestion des accès → Applications**
+   (*Freebox Settings → Access management → Applications*).
+3. Find **HA Freebox Parental Control** in the list.
+4. Enable **Modification des réglages de la Freebox**
+   (*Modify the Freebox settings*).
+5. Save. In Home Assistant, reload the integration
+   (**Settings → Devices & Services → Freebox Parental Control → ⋮ → Reload**).
+
+Without this right the config entry loads but the profile switches report
+`insufficient_rights` and cannot cut/restore Internet.
 
 ## Requirements
 
