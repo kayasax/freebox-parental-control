@@ -132,12 +132,19 @@ data:
 ### Programmation — intégrée à l'intégration
 
 Ouvrez **Réglages -> Appareils et services -> Freebox Parental Control ->
-Configurer**. Pour chaque profil vous pouvez activer une programmation
-automatique : une **heure de coupure**, une **heure de rétablissement** et les
-**jours** concernés. L'intégration exécute ces programmations elle-même — aucune
-automatisation ni blueprint nécessaire — de sorte que chaque utilisateur trouve
-la fonction au même endroit. Internet est coupé à l'heure de coupure les jours
-sélectionnés, et toujours rétabli à l'heure de rétablissement.
+Configurer** (icône engrenage). Vous gérez une **liste de programmations
+nommées** — autant que vous voulez, sur n'importe quel profil :
+
+- **➕ Ajouter une programmation** : donnez-lui un nom (ex. « Semaine »,
+  « Week-end »), choisissez le profil, l'heure de coupure, l'heure de
+  rétablissement et les jours.
+- **Cliquez une programmation** pour la modifier, ou cochez **🗑️ Supprimer**
+  pour la retirer.
+- Chaque programmation peut être activée ou mise en pause indépendamment.
+
+Ainsi vous pouvez par exemple avoir « Semaine » (21h→7h, lun-jeu) **et**
+« Week-end » (23h→9h, ven-dim) sur le même enfant. L'intégration exécute ces
+programmations elle-même — aucune automatisation ni blueprint nécessaire.
 
 Un blueprint (`blueprints/automation/kayasax/freebox_scheduled_cut.yaml`) est
 aussi disponible si vous préférez exprimer les programmations sous forme

@@ -21,11 +21,12 @@ from .const import (
     CONF_CUT,
     CONF_DAYS,
     CONF_ENABLED,
+    CONF_PROFILE_ID,
     CONF_RESTORE,
-    CONF_SCHEDULES,
     WEEKDAYS,
 )
 from .coordinator import FreeboxProfilesCoordinator
+from .schedule_util import normalize_schedules
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,15 +55,13 @@ class FreeboxScheduler:
     def async_setup(self) -> None:
         """(Re)register all listeners from the current options."""
         self.async_unload()
-        schedules = (self._entry.options or {}).get(CONF_SCHEDULES, {})
-        for pid_str, sched in schedules.items():
+        for sched in normalize_schedules(self._entry.options):
             if not sched.get(CONF_ENABLED):
                 continue
-            try:
-                pid = int(pid_str)
-            except (ValueError, TypeError):
+            pid = sched.get(CONF_PROFILE_ID)
+            if pid is None:
                 continue
-            self._register(pid, sched)
+            self._register(int(pid), sched)
 
     def _register(self, pid: int, sched: dict) -> None:
         days = sched.get(CONF_DAYS) or WEEKDAYS

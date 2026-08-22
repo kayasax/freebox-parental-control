@@ -26,20 +26,23 @@
   "options": {
     "step": {
       "init": {
-        "title": "Programmation des coupures internet",
-        "description": "Choisissez un profil pour définir sa coupure internet automatique, ou enregistrez et fermez.",
+        "title": "Programmations de coupure internet",
+        "description": "Sélectionnez une programmation pour la modifier, ajoutez-en une nouvelle, ou terminez.",
         "data": {
-          "profile": "Profil"
+          "choice": "Programmations"
         }
       },
-      "schedule": {
-        "title": "Programmation pour {profile}",
-        "description": "Internet est coupé à l'heure de coupure les jours sélectionnés, et rétabli à l'heure de rétablissement.",
+      "edit": {
+        "title": "Programmation : {name}",
+        "description": "Internet est coupé à l'heure de coupure les jours choisis, et rétabli à l'heure de rétablissement. Cochez « Supprimer » pour retirer cette programmation.",
         "data": {
+          "name": "Nom (ex. Semaine, Week-end)",
+          "profile_id": "Profil",
           "enabled": "Activer cette programmation",
           "cut": "Heure de coupure",
           "restore": "Heure de rétablissement",
-          "days": "Jours"
+          "days": "Jours",
+          "__delete__": "🗑️ Supprimer cette programmation"
         }
       }
     }

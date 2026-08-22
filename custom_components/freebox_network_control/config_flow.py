@@ -24,16 +24,23 @@ from .const import (
     CONF_DAYS,
     CONF_ENABLED,
     CONF_HOST,
+    CONF_ID,
+    CONF_NAME,
+    CONF_PROFILE_ID,
     CONF_RESTORE,
     CONF_SCHEDULES,
     DEFAULT_HOST,
     DOMAIN,
+    WEEKDAY_LABELS_FR,
     WEEKDAYS,
 )
+from .schedule_util import new_id, normalize_schedules, schedule_label
 
 _LOGGER = logging.getLogger(__name__)
 
+ADD = "__add__"
 DONE = "__done__"
+DELETE = "__delete__"
 
 
 class FreeboxNetworkControlConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -126,117 +133,166 @@ class FreeboxNetworkControlConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class FreeboxOptionsFlow(OptionsFlow):
-    """Per-profile cut schedules, editable from the integration's Configure UI.
+    """Manage a LIST of named cut schedules (add / edit / delete).
 
     Lives in the integration options so every user finds it via
-    Settings -> Devices & Services -> Freebox Parental Control -> Configure,
-    instead of a personal dashboard.
+    Settings -> Devices & Services -> Freebox Parental Control -> Configure.
     """
 
     def __init__(self) -> None:
-        self._options: dict[str, Any] = {}
-        self._pid: str | None = None
+        self._schedules: list[dict] | None = None
+        self._editing: str | None = None  # schedule id being edited, or None
 
     def _profiles(self) -> dict[int, dict]:
         coordinator = getattr(self.config_entry, "runtime_data", None)
         return dict(coordinator.data) if coordinator else {}
 
+    def _profile_name(self, pid: Any) -> str:
+        try:
+            return (self._profiles().get(int(pid), {}) or {}).get(
+                "name", str(pid)
+            )
+        except (ValueError, TypeError):
+            return str(pid)
+
+    def _ensure_loaded(self) -> None:
+        if self._schedules is None:
+            self._schedules = normalize_schedules(self.config_entry.options)
+
+    def _save(self) -> ConfigFlowResult:
+        return self.async_create_entry(
+            title="", data={CONF_SCHEDULES: self._schedules}
+        )
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        if not self._options:
-            # Deep-ish copy so we accumulate edits before saving.
-            existing = dict(self.config_entry.options or {})
-            self._options = {
-                CONF_SCHEDULES: dict(existing.get(CONF_SCHEDULES, {}))
-            }
+        """List existing schedules; let the user add one, edit one, or close."""
+        self._ensure_loaded()
 
-        profiles = self._profiles()
         if user_input is not None:
-            choice = user_input["profile"]
+            choice = user_input["choice"]
             if choice == DONE:
-                return self.async_create_entry(title="", data=self._options)
-            self._pid = str(choice)
-            return await self.async_step_schedule()
+                return self._save()
+            if choice == ADD:
+                self._editing = None
+                return await self.async_step_edit()
+            # choice is a schedule id to edit
+            self._editing = choice
+            return await self.async_step_edit()
 
-        # Build the profile picker, annotated with each profile's schedule state.
         options = []
-        for pid, prof in profiles.items():
-            sched = self._options[CONF_SCHEDULES].get(str(pid), {})
-            if sched.get(CONF_ENABLED):
-                label = (
-                    f"{prof.get('name')} — {sched.get(CONF_CUT)}→"
-                    f"{sched.get(CONF_RESTORE)}"
-                )
-            else:
-                label = f"{prof.get('name')} — (aucune programmation)"
-            options.append({"value": str(pid), "label": label})
-        options.append({"value": DONE, "label": "✓ Enregistrer et fermer"})
+        for sched in self._schedules:
+            options.append(
+                {
+                    "value": sched[CONF_ID],
+                    "label": schedule_label(
+                        sched, self._profile_name(sched.get(CONF_PROFILE_ID))
+                    ),
+                }
+            )
+        options.append({"value": ADD, "label": "➕ Ajouter une programmation"})
+        options.append({"value": DONE, "label": "✓ Terminer"})
 
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Required("profile"): selector(
+                    vol.Required("choice"): selector(
                         {"select": {"options": options, "mode": "list"}}
                     )
                 }
             ),
         )
 
-    async def async_step_schedule(
+    async def async_step_edit(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        assert self._pid is not None
-        cur = self._options[CONF_SCHEDULES].get(self._pid, {})
+        """Add or edit one schedule (or delete it)."""
+        self._ensure_loaded()
+        editing = next(
+            (s for s in self._schedules if s[CONF_ID] == self._editing), None
+        )
 
         if user_input is not None:
-            self._options[CONF_SCHEDULES][self._pid] = {
+            if user_input.get(DELETE) and editing is not None:
+                self._schedules = [
+                    s for s in self._schedules if s[CONF_ID] != self._editing
+                ]
+                return await self.async_step_init()
+
+            data = {
+                CONF_ID: self._editing or new_id(),
+                CONF_NAME: user_input[CONF_NAME],
+                CONF_PROFILE_ID: int(user_input[CONF_PROFILE_ID]),
                 CONF_ENABLED: user_input[CONF_ENABLED],
                 CONF_CUT: user_input[CONF_CUT],
                 CONF_RESTORE: user_input[CONF_RESTORE],
                 CONF_DAYS: user_input[CONF_DAYS],
             }
+            if editing is not None:
+                self._schedules = [
+                    data if s[CONF_ID] == self._editing else s
+                    for s in self._schedules
+                ]
+            else:
+                self._schedules.append(data)
             return await self.async_step_init()
 
-        day_options = [
-            {"value": d, "label": lbl}
-            for d, lbl in zip(
-                WEEKDAYS,
-                ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"],
-            )
-        ]
+        cur = editing or {}
         profiles = self._profiles()
-        name = (profiles.get(int(self._pid), {}) or {}).get("name", self._pid)
+        profile_options = [
+            {"value": str(pid), "label": prof.get("name", str(pid))}
+            for pid, prof in profiles.items()
+        ]
+        default_pid = str(
+            cur.get(CONF_PROFILE_ID)
+            if cur.get(CONF_PROFILE_ID) is not None
+            else (next(iter(profiles), ""))
+        )
+        day_options = [
+            {"value": d, "label": WEEKDAY_LABELS_FR[d]} for d in WEEKDAYS
+        ]
 
-        return self.async_show_form(
-            step_id="schedule",
-            data_schema=vol.Schema(
+        schema = {
+            vol.Required(
+                CONF_NAME, default=cur.get(CONF_NAME, "Nouvelle programmation")
+            ): str,
+            vol.Required(CONF_PROFILE_ID, default=default_pid): selector(
+                {"select": {"options": profile_options, "mode": "dropdown"}}
+            ),
+            vol.Required(
+                CONF_ENABLED, default=cur.get(CONF_ENABLED, True)
+            ): selector({"boolean": {}}),
+            vol.Required(
+                CONF_CUT, default=cur.get(CONF_CUT, "21:00:00")
+            ): selector({"time": {}}),
+            vol.Required(
+                CONF_RESTORE, default=cur.get(CONF_RESTORE, "07:00:00")
+            ): selector({"time": {}}),
+            vol.Required(
+                CONF_DAYS,
+                default=cur.get(CONF_DAYS, ["mon", "tue", "wed", "thu", "fri"]),
+            ): selector(
                 {
-                    vol.Required(
-                        CONF_ENABLED, default=cur.get(CONF_ENABLED, False)
-                    ): selector({"boolean": {}}),
-                    vol.Required(
-                        CONF_CUT, default=cur.get(CONF_CUT, "21:00:00")
-                    ): selector({"time": {}}),
-                    vol.Required(
-                        CONF_RESTORE, default=cur.get(CONF_RESTORE, "07:00:00")
-                    ): selector({"time": {}}),
-                    vol.Required(
-                        CONF_DAYS,
-                        default=cur.get(
-                            CONF_DAYS, ["mon", "tue", "wed", "thu", "fri"]
-                        ),
-                    ): selector(
-                        {
-                            "select": {
-                                "options": day_options,
-                                "multiple": True,
-                                "mode": "list",
-                            }
-                        }
-                    ),
+                    "select": {
+                        "options": day_options,
+                        "multiple": True,
+                        "mode": "list",
+                    }
                 }
             ),
-            description_placeholders={"profile": name},
+        }
+        # Offer a delete checkbox only when editing an existing schedule.
+        if editing is not None:
+            schema[vol.Optional(DELETE, default=False)] = selector(
+                {"boolean": {}}
+            )
+
+        return self.async_show_form(
+            step_id="edit",
+            data_schema=vol.Schema(schema),
+            description_placeholders={
+                "name": cur.get(CONF_NAME, "nouvelle programmation")
+            },
         )
