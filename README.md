@@ -40,23 +40,37 @@ config-flow-driven custom component.
 6. **Grant the app the required rights in Freebox OS** (mandatory — see below),
    otherwise the switches will fail with `insufficient_rights`.
 
-## Grant "Modification des réglages" rights (required)
+## Grant the required rights in Freebox OS (required)
 
 Approving the request on the LCD screen only creates the app; by default the
 Freebox grants it **minimal** rights, which are **not** enough to change
-network-control. You must enable the settings-modification right once:
+network-control. Without this the config entry loads but the switches report
+`insufficient_rights`. Enable the rights once:
 
-1. Open **http://mafreebox.freebox.fr** and sign in.
-2. Go to **Paramètres de la Freebox → Gestion des accès → Applications**
-   (*Freebox Settings → Access management → Applications*).
-3. Find **HA Freebox Parental Control** in the list.
-4. Enable **Modification des réglages de la Freebox**
-   (*Modify the Freebox settings*).
-5. Save. In Home Assistant, reload the integration
-   (**Settings → Devices & Services → Freebox Parental Control → ⋮ → Reload**).
+**1. Open Freebox OS** (`http://mafreebox.freebox.fr`), then
+**Paramètres de la Freebox → Gestion des accès**:
 
-Without this right the config entry loads but the profile switches report
-`insufficient_rights` and cannot cut/restore Internet.
+![Freebox settings – Gestion des accès](docs/images/01-gestion-des-acces.png)
+
+**2. Open the _Applications_ tab**, find **HA Freebox Parental Control** and
+click the **pencil (Éditer)** icon:
+
+![Applications tab – edit the app](docs/images/02-applications-edit.png)
+
+**3. Tick the required rights** — at minimum
+**Modification des réglages de la Freebox**; also enable
+**Accès au contrôle parental** and **Gestion des profils utilisateur** — then
+**OK**:
+
+![Rights dialog](docs/images/03-droits-acces.png)
+
+**4. The app now lists the granted rights:**
+
+![Granted permissions](docs/images/04-permissions-finales.png)
+
+**5. Back in Home Assistant**, reload the integration
+(**Settings → Devices & Services → Freebox Parental Control → ⋮ → Reload**).
+The profile switches and device sensors appear within a minute.
 
 ## Requirements
 
