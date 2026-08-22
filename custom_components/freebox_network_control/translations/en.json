@@ -22,5 +22,26 @@
     "abort": {
       "already_configured": "This Freebox is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Internet cut schedules",
+        "description": "Pick a profile to set its automatic Internet cut schedule, or save and close.",
+        "data": {
+          "profile": "Profile"
+        }
+      },
+      "schedule": {
+        "title": "Schedule for {profile}",
+        "description": "Internet is cut at the cut time on the selected days and restored at the restore time.",
+        "data": {
+          "enabled": "Enable this schedule",
+          "cut": "Cut time",
+          "restore": "Restore time",
+          "days": "Days"
+        }
+      }
+    }
   }
 }

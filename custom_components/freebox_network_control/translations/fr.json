@@ -22,5 +22,26 @@
     "abort": {
       "already_configured": "Cette Freebox est déjà configurée."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Programmation des coupures internet",
+        "description": "Choisissez un profil pour définir sa coupure internet automatique, ou enregistrez et fermez.",
+        "data": {
+          "profile": "Profil"
+        }
+      },
+      "schedule": {
+        "title": "Programmation pour {profile}",
+        "description": "Internet est coupé à l'heure de coupure les jours sélectionnés, et rétabli à l'heure de rétablissement.",
+        "data": {
+          "enabled": "Activer cette programmation",
+          "cut": "Heure de coupure",
+          "restore": "Heure de rétablissement",
+          "days": "Jours"
+        }
+      }
+    }
   }
 }

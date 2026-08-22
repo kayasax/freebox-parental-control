@@ -17,6 +17,18 @@ DEFAULT_HOST = "http://mafreebox.freebox.fr"
 CONF_HOST = "host"
 CONF_APP_TOKEN = "app_token"
 
+# Options (entry.options) — per-profile cut schedules.
+# Shape: { CONF_SCHEDULES: { "<profile_id>": {
+#     CONF_ENABLED: bool, CONF_CUT: "HH:MM:SS",
+#     CONF_RESTORE: "HH:MM:SS", CONF_DAYS: ["mon", ...] } } }
+CONF_SCHEDULES = "schedules"
+CONF_ENABLED = "enabled"
+CONF_CUT = "cut"
+CONF_RESTORE = "restore"
+CONF_DAYS = "days"
+
+WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
 # Seconds between profile state refreshes. Kept conservative: the proven pyscript
 # hammered the box every 5 min with many synchronous calls and overloaded the VM;
 # a single async coordinator pass every 60 s is far lighter.

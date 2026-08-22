@@ -128,19 +128,24 @@ data:
   minutes: 45
 ```
 
-### Scheduling assistant — blueprint
+### Scheduling — built into the integration
 
-Import the **"Freebox – Scheduled Internet cut for a profile"** blueprint
-(`blueprints/automation/kayasax/freebox_scheduled_cut.yaml`) to cut a profile
-between two times on selected days (e.g. every school night 21:00 → 07:00). In
-Home Assistant this is more flexible than the Freebox's own schedule because
-you can add any HA condition (presence, holidays, helpers…).
+Open **Settings → Devices & Services → Freebox Parental Control → Configure**.
+For each profile you can enable an automatic schedule: a **cut time**, a
+**restore time** and the **days** it applies. The integration runs these
+schedules itself — no automation or blueprint needed — so every user finds the
+feature in the same place. Internet is cut at the cut time on the selected days
+and always restored at the restore time.
+
+A blueprint (`blueprints/automation/kayasax/freebox_scheduled_cut.yaml`) is also
+available if you prefer expressing schedules as Home Assistant automations with
+extra conditions (presence, holidays, helpers…).
 
 ## Roadmap
 
 - **Phase A** — switches + device sensors, config flow. ✅
 - **Phase B** — per-device online status, timed cut (`cut_for`), scheduling
-  blueprint. ✅
+  (built-in options UI + blueprint). ✅
 - **Phase C** — device assignment service, profile CRUD, and upstreaming async
   `network_control` / `profile` support to
   [`freebox-api`](https://github.com/hacf-fr/freebox-api).
