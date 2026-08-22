@@ -17,3 +17,6 @@ dashboard_freebox_profils.json
 
 # Local exploration script (contains secrets)
 explore_api.py
+
+# Local HACS websocket helper
+hacs_ws.py
