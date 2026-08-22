@@ -1,124 +1,125 @@
-# Freebox Parental Control for Home Assistant
+# Contrôle parental Freebox pour Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
-Control **per-profile Internet access** on your **Freebox** directly from Home
-Assistant — the parental / network-control feature the official Freebox
-integration does not provide.
+Pilotez l'**accès à Internet par profil** de votre **Freebox** directement
+depuis Home Assistant — la fonction de contrôle parental / réseau que
+l'intégration Freebox officielle ne propose pas.
 
-Each Freebox *network-control profile* (typically one per family member) is
-exposed as:
+Chaque *profil de contrôle réseau* de la Freebox (en général un par membre de la
+famille) est exposé sous forme de :
 
-- a **switch** — `ON` = that profile has Internet; turn it **OFF** to cut the
-  Internet, **ON** to restore it;
-- a **sensor** — the number of devices assigned to the profile, with their
-  resolved names as attributes.
+- un **interrupteur** — `Activé` = ce profil a Internet ; **éteignez-le** pour
+  **couper** Internet, **rallumez-le** pour le **rétablir** ;
+- un **capteur** — le nombre d'appareils rattachés au profil, avec leur nom et
+  leur état en ligne dans les attributs.
 
-Everything runs **locally** against `http://mafreebox.freebox.fr`. Nothing goes
-through the Freebox cloud, and the app token is stored in the config entry — no
-token in any file.
+Tout fonctionne **en local** sur `http://mafreebox.freebox.fr`. Rien ne passe
+par le cloud Freebox, et le jeton d'application est stocké dans l'entrée de
+configuration.
 
-## Why this exists
+## Pourquoi cette intégration
 
-The official core Freebox integration only exposes the global Wi-Fi switch and
-device-tracker presence. **No** existing integration controls the parental /
-network-control **profiles**. This integration fills that gap with a real,
-config-flow-driven custom component.
+L'intégration Freebox officielle du cœur de HA n'expose que l'interrupteur Wi-Fi
+global et la présence des appareils (device_tracker). **Aucune** intégration
+existante ne pilote les **profils** de contrôle parental / réseau. Celle-ci
+comble ce manque avec un vrai composant personnalisé, configurable via l'UI.
 
 ## Installation
 
-Setup has **three** stages: install the code (HACS), add the integration in
-Home Assistant, then grant rights on the Freebox. Do them in order.
+L'installation se fait en **trois** étapes : installer le code (HACS), ajouter
+l'intégration dans Home Assistant, puis accorder les droits sur la Freebox.
+Faites-les dans l'ordre.
 
-### Stage 1 — Install via HACS (custom repository)
+### Étape 1 — Installer via HACS (dépôt personnalisé)
 
-1. In the Home Assistant **left sidebar**, open **HACS** (not *Settings*).
-2. Top-right, click the **⋮** menu → **Custom repositories**
-   (*Dépôts personnalisés*):
+1. Dans la **barre latérale** de Home Assistant, ouvrez **HACS** (pas *Réglages*).
+2. En haut à droite, cliquez sur le menu **⋮** → **Dépôts personnalisés** :
 
-   ![HACS custom repositories menu](docs/images/05-hacs-custom-repo.png)
+   ![Menu dépôts personnalisés HACS](docs/images/05-hacs-custom-repo.png)
 
-3. In the dialog, fill in:
-   - **Repository**: `https://github.com/kayasax/freebox-parental-control`
-   - **Type / Category**: **Integration**
-   then click **Add**.
-4. Close the dialog, search HACS for **Freebox Parental Control**, open it and
-   click **Download**.
-5. **Restart Home Assistant** when prompted
-   (*Settings → System → top-right power icon → Restart*).
+3. Dans la boîte de dialogue, renseignez :
+   - **Dépôt** : `https://github.com/kayasax/freebox-parental-control`
+   - **Type / Catégorie** : **Intégration**
+   puis cliquez sur **Ajouter**.
+4. Fermez la fenêtre, cherchez **Freebox Parental Control** dans HACS, ouvrez-la
+   et cliquez sur **Télécharger**.
+5. **Redémarrez Home Assistant** quand c'est proposé
+   (*Réglages → Système → icône d'alimentation en haut à droite → Redémarrer*).
 
-### Stage 2 — Add the integration
+### Étape 2 — Ajouter l'intégration
 
-6. Go to **Settings → Devices & Services → Add Integration**, search
-   **Freebox Parental Control**, and select it.
-7. Keep the default address (`http://mafreebox.freebox.fr`) and submit.
-8. **Walk to your Freebox**: its front LCD screen shows an authorization
-   request — press the **right arrow ▶**, then **OK** to grant access. Back in
-   Home Assistant, submit the second step to finish.
+6. Allez dans **Réglages → Appareils et services → Ajouter une intégration**,
+   cherchez **Freebox Parental Control** et sélectionnez-la.
+7. Gardez l'adresse par défaut (`http://mafreebox.freebox.fr`) et validez.
+8. **Rendez-vous devant votre Freebox** : son écran LCD en façade affiche une
+   demande d'autorisation — appuyez sur la **flèche droite** puis **OK** pour
+   accorder l'accès. De retour dans Home Assistant, validez la seconde étape.
 
-At this point the integration is added, but the switches will show
-`insufficient_rights` until you finish Stage 3.
+À ce stade l'intégration est ajoutée, mais les interrupteurs afficheront
+`insufficient_rights` tant que vous n'avez pas fait l'étape 3.
 
-### Stage 3 — Grant the required rights in Freebox OS (mandatory)
+### Étape 3 — Accorder les droits dans Freebox OS (obligatoire)
 
-Approving the request on the LCD screen only *creates* the app; by default the
-Freebox gives it **minimal** rights, which are **not** enough to control
-network-access. Enable the rights once:
+Valider la demande sur l'écran LCD ne fait que *créer* l'application ; par
+défaut la Freebox ne lui donne que des droits **minimaux**, **insuffisants**
+pour piloter l'accès réseau. Activez les droits une fois :
 
-**1. Open Freebox OS** (`http://mafreebox.freebox.fr`), then
-**Paramètres de la Freebox → Gestion des accès**:
+**1. Ouvrez Freebox OS** (`http://mafreebox.freebox.fr`), puis
+**Paramètres de la Freebox -> Gestion des accès** :
 
-![Freebox settings – Gestion des accès](docs/images/01-gestion-des-acces.png)
+![Paramètres Freebox – Gestion des accès](docs/images/01-gestion-des-acces.png)
 
-**2. Open the _Applications_ tab**, find **HA Freebox Parental Control** and
-click the **pencil (Éditer)** icon:
+**2. Ouvrez l'onglet _Applications_**, trouvez **HA Freebox Parental Control**
+et cliquez sur l'icône **crayon (Éditer)** :
 
-![Applications tab – edit the app](docs/images/02-applications-edit.png)
+![Onglet Applications – éditer l'application](docs/images/02-applications-edit.png)
 
-**3. Tick the required rights** — at minimum
-**Modification des réglages de la Freebox**; also enable
-**Accès au contrôle parental** and **Gestion des profils utilisateur** — then
-**OK**:
+**3. Cochez les droits nécessaires** — au minimum
+**Modification des réglages de la Freebox** ; activez aussi
+**Accès au contrôle parental** et **Gestion des profils utilisateur** — puis
+**OK** :
 
-![Rights dialog](docs/images/03-droits-acces.png)
+![Fenêtre des droits](docs/images/03-droits-acces.png)
 
-**4. The app now lists the granted rights:**
+**4. L'application liste désormais les droits accordés :**
 
-![Granted permissions](docs/images/04-permissions-finales.png)
+![Droits accordés](docs/images/04-permissions-finales.png)
 
-**5. Back in Home Assistant**, reload the integration
-(**Settings → Devices & Services → Freebox Parental Control → ⋮ → Reload**).
-The profile switches and device sensors appear within a minute.
+**5. De retour dans Home Assistant**, rechargez l'intégration
+(**Réglages -> Appareils et services -> Freebox Parental Control -> ⋮ -> Recharger**).
+Les interrupteurs et capteurs des profils apparaissent en moins d'une minute.
 
-## Requirements
+## Prérequis
 
-- Home Assistant must be on the **same LAN** as the Freebox.
-- A Freebox OS version exposing `network_control` (Freebox OS v15+).
+- Home Assistant doit être sur le **même réseau local** que la Freebox.
+- Une version de Freebox OS exposant `network_control` (Freebox OS v15+).
 
-## Usage
+## Utilisation
 
-### Switches — cut / restore Internet
+### Interrupteurs — couper / rétablir Internet
 
-Each profile has a `switch.<profile>_internet`: **on = Internet allowed**, turn
-it off to cut, on to restore. Use it in automations, scripts, dashboards or a
-physical button.
+Chaque profil a un `switch.<profil>_internet` : **allumé = Internet autorisé**,
+éteignez-le pour couper, rallumez-le pour rétablir. Utilisable dans des
+automatisations, des scripts, des tableaux de bord ou depuis un bouton physique.
 
-### Device sensors — who is in each profile
+### Capteurs d'appareils — qui est dans chaque profil
 
-Each profile has a `sensor.<profile>_devices` whose state is the device count.
-Its attributes include:
+Chaque profil a un `sensor.<profil>_devices` dont l'état est le nombre
+d'appareils. Ses attributs comprennent :
 
-- `online_count` — how many of the profile's devices are currently online;
-- `device_status` — a list of `{name, online, mac}` for each assigned device;
-- `devices` / `macs` — plain name and MAC lists.
+- `online_count` — combien d'appareils du profil sont actuellement en ligne ;
+- `device_status` — une liste `{name, online, mac}` pour chaque appareil ;
+- `devices` / `macs` — les listes simples de noms et d'adresses MAC.
 
-A ready-made dashboard (see `dashboard_freebox_profils.json` in the repo) lists
-each profile's devices with a 🟢/⚫ online indicator.
+Un tableau de bord prêt à l'emploi (voir `dashboard_freebox_profils.json` dans
+le dépôt) liste les appareils de chaque profil avec un indicateur en ligne.
 
-### Timed cut — `cut_for` service
+### Coupure minutée — service `cut_for`
 
-To cut a profile for a bounded time with automatic restore, call the
-`freebox_network_control.cut_for` service on a profile switch:
+Pour couper un profil pendant une durée bornée avec rétablissement automatique,
+appelez le service `freebox_network_control.cut_for` sur un interrupteur de
+profil :
 
 ```yaml
 service: freebox_network_control.cut_for
@@ -128,32 +129,35 @@ data:
   minutes: 45
 ```
 
-### Scheduling — built into the integration
+### Programmation — intégrée à l'intégration
 
-Open **Settings → Devices & Services → Freebox Parental Control → Configure**.
-For each profile you can enable an automatic schedule: a **cut time**, a
-**restore time** and the **days** it applies. The integration runs these
-schedules itself — no automation or blueprint needed — so every user finds the
-feature in the same place. Internet is cut at the cut time on the selected days
-and always restored at the restore time.
+Ouvrez **Réglages -> Appareils et services -> Freebox Parental Control ->
+Configurer**. Pour chaque profil vous pouvez activer une programmation
+automatique : une **heure de coupure**, une **heure de rétablissement** et les
+**jours** concernés. L'intégration exécute ces programmations elle-même — aucune
+automatisation ni blueprint nécessaire — de sorte que chaque utilisateur trouve
+la fonction au même endroit. Internet est coupé à l'heure de coupure les jours
+sélectionnés, et toujours rétabli à l'heure de rétablissement.
 
-A blueprint (`blueprints/automation/kayasax/freebox_scheduled_cut.yaml`) is also
-available if you prefer expressing schedules as Home Assistant automations with
-extra conditions (presence, holidays, helpers…).
+Un blueprint (`blueprints/automation/kayasax/freebox_scheduled_cut.yaml`) est
+aussi disponible si vous préférez exprimer les programmations sous forme
+d'automatisations Home Assistant avec des conditions supplémentaires (présence,
+vacances, aides…).
 
-## Roadmap
+## Feuille de route
 
-- **Phase A** — switches + device sensors, config flow. ✅
-- **Phase B** — per-device online status, timed cut (`cut_for`), scheduling
-  (built-in options UI + blueprint). ✅
-- **Phase C** — device assignment service, profile CRUD, and upstreaming async
-  `network_control` / `profile` support to
-  [`freebox-api`](https://github.com/hacf-fr/freebox-api).
+- **Phase A** — interrupteurs + capteurs d'appareils, config flow. Fait.
+- **Phase B** — état en ligne par appareil, coupure minutée (`cut_for`),
+  programmation (UI d'options intégrée + blueprint). Fait.
+- **Phase C** — service d'assignation d'appareils, gestion des profils
+  (création/suppression), et remontée du support async `network_control` /
+  `profile` vers [`freebox-api`](https://github.com/hacf-fr/freebox-api).
 
-## Credits
+## Crédits
 
-Built from a proven local Freebox client. Not affiliated with Free / Freebox.
+Construit à partir d'un client Freebox local éprouvé. Non affilié à Free /
+Freebox.
 
-## License
+## Licence
 
 [MIT](LICENSE)
