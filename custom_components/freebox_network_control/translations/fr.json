@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Contrôle réseau Freebox",
+        "title": "Contrôle parental Freebox",
         "description": "Saisissez l'adresse locale de votre Freebox. Home Assistant doit être sur le même réseau que la Freebox.",
         "data": {
           "host": "Adresse de la Freebox"

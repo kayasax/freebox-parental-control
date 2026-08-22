@@ -76,7 +76,7 @@ class FreeboxNetworkControlConfigFlow(ConfigFlow, domain=DOMAIN):
                     await self.async_set_unique_id(self._host)
                     self._abort_if_unique_id_configured()
                     return self.async_create_entry(
-                        title="Freebox Network Control",
+                        title="Freebox Parental Control",
                         data={
                             CONF_HOST: self._host,
                             CONF_APP_TOKEN: self._client.app_token,

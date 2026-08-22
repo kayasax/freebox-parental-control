@@ -25,27 +25,45 @@ device-tracker presence. **No** existing integration controls the parental /
 network-control **profiles**. This integration fills that gap with a real,
 config-flow-driven custom component.
 
-## Installation (HACS)
+## Installation
 
-1. In HACS → **Integrations** → ⋮ menu → **Custom repositories**, add
-   `https://github.com/kayasax/freebox-parental-control` with category
-   **Integration**.
-2. Install **Freebox Parental Control**, then **restart Home Assistant**.
-3. Go to **Settings → Devices & Services → Add Integration** and search for
-   **Freebox Parental Control**.
-4. Keep the default address (`http://mafreebox.freebox.fr`) and submit.
-5. **Walk to your Freebox**: its front LCD screen shows an authorization
-   request — press the **right arrow**, then **OK** to grant access. Back in
+Setup has **three** stages: install the code (HACS), add the integration in
+Home Assistant, then grant rights on the Freebox. Do them in order.
+
+### Stage 1 — Install via HACS (custom repository)
+
+1. In the Home Assistant **left sidebar**, open **HACS** (not *Settings*).
+2. Top-right, click the **⋮** menu → **Custom repositories**
+   (*Dépôts personnalisés*):
+
+   ![HACS custom repositories menu](docs/images/05-hacs-custom-repo.png)
+
+3. In the dialog, fill in:
+   - **Repository**: `https://github.com/kayasax/freebox-parental-control`
+   - **Type / Category**: **Integration**
+   then click **Add**.
+4. Close the dialog, search HACS for **Freebox Parental Control**, open it and
+   click **Download**.
+5. **Restart Home Assistant** when prompted
+   (*Settings → System → top-right power icon → Restart*).
+
+### Stage 2 — Add the integration
+
+6. Go to **Settings → Devices & Services → Add Integration**, search
+   **Freebox Parental Control**, and select it.
+7. Keep the default address (`http://mafreebox.freebox.fr`) and submit.
+8. **Walk to your Freebox**: its front LCD screen shows an authorization
+   request — press the **right arrow ▶**, then **OK** to grant access. Back in
    Home Assistant, submit the second step to finish.
-6. **Grant the app the required rights in Freebox OS** (mandatory — see below),
-   otherwise the switches will fail with `insufficient_rights`.
 
-## Grant the required rights in Freebox OS (required)
+At this point the integration is added, but the switches will show
+`insufficient_rights` until you finish Stage 3.
 
-Approving the request on the LCD screen only creates the app; by default the
-Freebox grants it **minimal** rights, which are **not** enough to change
-network-control. Without this the config entry loads but the switches report
-`insufficient_rights`. Enable the rights once:
+### Stage 3 — Grant the required rights in Freebox OS (mandatory)
+
+Approving the request on the LCD screen only *creates* the app; by default the
+Freebox gives it **minimal** rights, which are **not** enough to control
+network-access. Enable the rights once:
 
 **1. Open Freebox OS** (`http://mafreebox.freebox.fr`), then
 **Paramètres de la Freebox → Gestion des accès**:

@@ -1,6 +1,6 @@
 {
   "domain": "freebox_network_control",
-  "name": "Freebox Network Control",
+  "name": "Freebox Parental Control",
   "codeowners": ["@kayasax"],
   "config_flow": true,
   "documentation": "https://github.com/kayasax/freebox-parental-control",

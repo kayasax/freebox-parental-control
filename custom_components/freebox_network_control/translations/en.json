@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Freebox Network Control",
+        "title": "Freebox Parental Control",
         "description": "Enter your Freebox local address. Home Assistant must be on the same network as the Freebox.",
         "data": {
           "host": "Freebox address"
