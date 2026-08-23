@@ -3,11 +3,12 @@
   "name": "Freebox Parental Control",
   "codeowners": ["@kayasax"],
   "config_flow": true,
+  "dependencies": ["http", "frontend"],
   "documentation": "https://github.com/kayasax/freebox-parental-control",
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/kayasax/freebox-parental-control/issues",
   "requirements": [],
-  "version": "1.2.0"
+  "version": "1.3.0"
 }
 

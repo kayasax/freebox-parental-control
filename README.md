@@ -97,6 +97,28 @@ Les interrupteurs et capteurs des profils apparaissent en moins d'une minute.
 
 ## Utilisation
 
+### La carte (recommandé) — tout se pilote depuis le tableau de bord
+
+L'intégration **embarque sa propre carte Lovelace** (aucune installation
+supplémentaire nécessaire). Ajoutez-la à n'importe quel tableau de bord :
+
+1. Éditez un tableau de bord → **Ajouter une carte** → cherchez
+   **« Freebox Parental Control »** (ou, en YAML :
+   `type: custom:freebox-parental-card`).
+2. La carte se configure toute seule (elle détecte l'intégration).
+
+Depuis la carte, vous pouvez, **sans jamais passer par les Réglages** :
+
+- **Couper / rétablir** Internet de chaque profil (interrupteur) ;
+- voir le **nombre d'appareils en ligne** par profil ;
+- lancer une **coupure minutée** (30 min / 1 h / 2 h) avec rétablissement auto ;
+- **ajouter / modifier / supprimer plusieurs programmations nommées** (nom,
+  profil, heure de coupure, heure de rétablissement, jours) — tout est visible
+  et éditable directement sur la carte.
+
+> La carte est servie et enregistrée automatiquement par l'intégration ; il n'y
+> a aucun dépôt de ressource à ajouter manuellement.
+
 ### Interrupteurs — couper / rétablir Internet
 
 Chaque profil a un `switch.<profil>_internet` : **allumé = Internet autorisé**,
@@ -112,8 +134,8 @@ d'appareils. Ses attributs comprennent :
 - `device_status` — une liste `{name, online, mac}` pour chaque appareil ;
 - `devices` / `macs` — les listes simples de noms et d'adresses MAC.
 
-Un tableau de bord prêt à l'emploi (voir `dashboard_freebox_profils.json` dans
-le dépôt) liste les appareils de chaque profil avec un indicateur en ligne.
+Un capteur `sensor.freebox_parental_control_schedules` expose aussi la liste des
+programmations et des profils (utilisé par la carte).
 
 ### Coupure minutée — service `cut_for`
 
@@ -129,11 +151,15 @@ data:
   minutes: 45
 ```
 
-### Programmation — intégrée à l'intégration
+### Programmation — depuis la carte (ou les options)
 
-Ouvrez **Réglages -> Appareils et services -> Freebox Parental Control ->
-Configurer** (icône engrenage). Vous gérez une **liste de programmations
-nommées** — autant que vous voulez, sur n'importe quel profil :
+Le plus simple : gérez les programmations **directement sur la carte** (voir
+plus haut) — ajout / édition / suppression de plusieurs programmations nommées,
+tout est visible. En interne, la carte utilise les services
+`freebox_network_control.schedule_upsert` et `schedule_delete`.
+
+Une alternative existe via **Réglages → Appareils et services → Freebox Parental
+Control → Configurer** (icône engrenage) pour ceux qui préfèrent :
 
 - **➕ Ajouter une programmation** : donnez-lui un nom (ex. « Semaine »,
   « Week-end »), choisissez le profil, l'heure de coupure, l'heure de

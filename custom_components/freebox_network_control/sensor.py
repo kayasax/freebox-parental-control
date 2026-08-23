@@ -11,8 +11,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import FreeboxConfigEntry
-from .const import DOMAIN
+from .const import CONF_SCHEDULES, DOMAIN
 from .coordinator import FreeboxProfilesCoordinator
+from .schedule_util import normalize_schedules
 
 
 async def async_setup_entry(
@@ -21,9 +22,11 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data
-    async_add_entities(
+    entities: list[SensorEntity] = [
         FreeboxProfileDevicesSensor(coordinator, pid) for pid in coordinator.data
-    )
+    ]
+    entities.append(FreeboxSchedulesSensor(coordinator, entry))
+    async_add_entities(entities)
 
 
 class FreeboxProfileDevicesSensor(
@@ -76,6 +79,62 @@ class FreeboxProfileDevicesSensor(
             "device_status": details,
             "macs": self._macs,
         }
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self.async_write_ha_state()
+
+
+class FreeboxSchedulesSensor(
+    CoordinatorEntity[FreeboxProfilesCoordinator], SensorEntity
+):
+    """Exposes the cut schedules + profile list for the bundled card.
+
+    State = number of schedules. Attributes carry the full schedules list and
+    the profiles (id + name) so the front-end card can render and edit them.
+    """
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:calendar-clock"
+    _attr_name = "Schedules"
+
+    def __init__(
+        self, coordinator: FreeboxProfilesCoordinator, entry: FreeboxConfigEntry
+    ) -> None:
+        super().__init__(coordinator)
+        self._entry = entry
+        self._attr_unique_id = f"{entry.entry_id}_schedules"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{entry.entry_id}_hub")},
+            manufacturer="Freebox",
+            name="Freebox Parental Control",
+        )
+
+    @property
+    def native_value(self) -> int:
+        return len(normalize_schedules(self._entry.options))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        profiles = [
+            {"id": pid, "name": (prof.get("name") or str(pid))}
+            for pid, prof in self.coordinator.data.items()
+        ]
+        return {
+            "entry_id": self._entry.entry_id,
+            "profiles": profiles,
+            CONF_SCHEDULES: normalize_schedules(self._entry.options),
+        }
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        # Reflect option changes (schedule edits) immediately.
+        self.async_on_remove(
+            self._entry.add_update_listener(self._async_entry_updated)
+        )
+
+    async def _async_entry_updated(self, hass, entry) -> None:
+        self.async_write_ha_state()
 
     @callback
     def _handle_coordinator_update(self) -> None:

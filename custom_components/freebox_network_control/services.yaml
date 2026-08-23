@@ -20,3 +20,75 @@ cut_for:
           max: 1440
           unit_of_measurement: min
           mode: box
+
+schedule_upsert:
+  name: Add or update a cut schedule
+  description: >-
+    Create a new named cut schedule (or update an existing one when id is
+    provided). Used by the bundled dashboard card.
+  fields:
+    id:
+      name: Schedule ID
+      description: Existing schedule id to update. Omit to create a new one.
+      example: "a1b2c3d4"
+      selector:
+      text:
+    name:
+      name: Name
+      description: Human-friendly schedule name (e.g. Weekdays, Weekend).
+      required: true
+      example: "Semaine"
+      selector:
+      text:
+    profile_id:
+      name: Profile ID
+      description: The Freebox profile id this schedule applies to.
+      required: true
+      example: 3
+      selector:
+      number:
+        mode: box
+    enabled:
+      name: Enabled
+      default: true
+      selector:
+      boolean:
+    cut:
+      name: Cut time
+      required: true
+      example: "21:00:00"
+      selector:
+      time:
+    restore:
+      name: Restore time
+      required: true
+      example: "07:00:00"
+      selector:
+      time:
+    days:
+      name: Days
+      description: Weekdays the cut applies (mon, tue, wed, thu, fri, sat, sun).
+      required: true
+      example: ["mon", "tue", "wed", "thu", "fri"]
+      selector:
+      select:
+        multiple: true
+        options:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+          - sat
+          - sun
+
+schedule_delete:
+  name: Delete a cut schedule
+  description: Remove a cut schedule by its id. Used by the bundled card.
+  fields:
+    id:
+      name: Schedule ID
+      required: true
+      example: "a1b2c3d4"
+      selector:
+      text:

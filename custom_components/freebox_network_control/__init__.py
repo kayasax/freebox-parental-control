@@ -10,7 +10,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import FreeboxClient
 from .const import CONF_APP_TOKEN, CONF_HOST, DEFAULT_HOST, DOMAIN
 from .coordinator import FreeboxProfilesCoordinator
+from .frontend import async_register_card
 from .scheduler import FreeboxScheduler
+from .services import async_register_services
 
 PLATFORMS: list[Platform] = [Platform.SWITCH, Platform.SENSOR]
 
@@ -40,6 +42,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
     entry.async_on_unload(scheduler.async_unload)
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = scheduler
+
+    # Schedule-management services + the bundled dashboard card (once).
+    await async_register_services(hass)
+    await async_register_card(hass)
     return True
 
 
