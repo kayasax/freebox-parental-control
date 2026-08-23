@@ -100,7 +100,9 @@ Les interrupteurs et capteurs des profils apparaissent en moins d'une minute.
 ### La carte (recommandé) — tout se pilote depuis le tableau de bord
 
 L'intégration **embarque sa propre carte Lovelace** (aucune installation
-supplémentaire nécessaire). Ajoutez-la à n'importe quel tableau de bord :
+supplémentaire, aucun dépôt de ressource à ajouter). Après avoir installé
+l'intégration via HACS et redémarré Home Assistant, ajoutez la carte à
+n'importe quel tableau de bord :
 
 1. Éditez un tableau de bord → **Ajouter une carte** → cherchez
    **« Freebox Parental Control »** (ou, en YAML :
@@ -113,11 +115,21 @@ Depuis la carte, vous pouvez, **sans jamais passer par les Réglages** :
 - voir le **nombre d'appareils en ligne** par profil ;
 - lancer une **coupure minutée** (30 min / 1 h / 2 h) avec rétablissement auto ;
 - **ajouter / modifier / supprimer plusieurs programmations nommées** (nom,
-  profil, heure de coupure, heure de rétablissement, jours) — tout est visible
-  et éditable directement sur la carte.
+  un ou plusieurs profils, heure de coupure, heure de rétablissement, jours) —
+  tout est visible et éditable directement sur la carte.
 
-> La carte est servie et enregistrée automatiquement par l'intégration ; il n'y
-> a aucun dépôt de ressource à ajouter manuellement.
+> La carte est servie et enregistrée automatiquement par l'intégration.
+
+> **Important — après l'installation ou une mise à jour** : Home Assistant est
+> une application web qui met le tableau de bord en cache. Si la carte affiche
+> « Erreur de configuration » (`Custom element doesn't exist`), il faut vider ce
+> cache une fois :
+>
+> - **Rechargement forcé** : `Ctrl`+`Maj`+`R` (Windows/Linux) ou
+>   `Cmd`+`Maj`+`R` (Mac) ; ou testez dans une **fenêtre privée** ;
+> - si cela ne suffit pas : `F12` → onglet **Application** → **Service Workers**
+>   → *Unregister*, puis **Clear site data**, puis rechargez ;
+> - sur l'**app mobile** : réglages de l'app → vider le cache du frontend.
 
 ### Interrupteurs — couper / rétablir Internet
 
