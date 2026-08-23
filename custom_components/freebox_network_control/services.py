@@ -20,6 +20,7 @@ from .const import (
     CONF_ID,
     CONF_NAME,
     CONF_PROFILE_ID,
+    CONF_PROFILE_IDS,
     CONF_RESTORE,
     CONF_SCHEDULES,
     DOMAIN,
@@ -35,7 +36,11 @@ _UPSERT_SCHEMA = vol.Schema(
         vol.Optional("entry_id"): cv.string,
         vol.Optional(CONF_ID): cv.string,
         vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_PROFILE_ID): vol.Coerce(int),
+        # Accept a list of profiles (preferred) or a single one (back-compat).
+        vol.Optional(CONF_PROFILE_IDS): vol.All(
+            cv.ensure_list, [vol.Coerce(int)]
+        ),
+        vol.Optional(CONF_PROFILE_ID): vol.Coerce(int),
         vol.Optional(CONF_ENABLED, default=True): cv.boolean,
         vol.Required(CONF_CUT): cv.string,
         vol.Required(CONF_RESTORE): cv.string,
@@ -77,10 +82,13 @@ async def async_register_services(hass: HomeAssistant) -> None:
         if entry is None:
             return
         schedules = normalize_schedules(entry.options)
+        profile_ids = call.data.get(CONF_PROFILE_IDS)
+        if not profile_ids and call.data.get(CONF_PROFILE_ID) is not None:
+            profile_ids = [call.data[CONF_PROFILE_ID]]
         sched = {
             CONF_ID: call.data.get(CONF_ID) or new_id(),
             CONF_NAME: call.data[CONF_NAME],
-            CONF_PROFILE_ID: int(call.data[CONF_PROFILE_ID]),
+            CONF_PROFILE_IDS: [int(p) for p in (profile_ids or [])],
             CONF_ENABLED: call.data[CONF_ENABLED],
             CONF_CUT: _normalize_hms(call.data[CONF_CUT]),
             CONF_RESTORE: _normalize_hms(call.data[CONF_RESTORE]),

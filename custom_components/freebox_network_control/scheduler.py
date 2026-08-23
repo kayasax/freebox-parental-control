@@ -21,7 +21,7 @@ from .const import (
     CONF_CUT,
     CONF_DAYS,
     CONF_ENABLED,
-    CONF_PROFILE_ID,
+    CONF_PROFILE_IDS,
     CONF_RESTORE,
     WEEKDAYS,
 )
@@ -58,10 +58,8 @@ class FreeboxScheduler:
         for sched in normalize_schedules(self._entry.options):
             if not sched.get(CONF_ENABLED):
                 continue
-            pid = sched.get(CONF_PROFILE_ID)
-            if pid is None:
-                continue
-            self._register(int(pid), sched)
+            for pid in sched.get(CONF_PROFILE_IDS) or []:
+                self._register(int(pid), sched)
 
     def _register(self, pid: int, sched: dict) -> None:
         days = sched.get(CONF_DAYS) or WEEKDAYS

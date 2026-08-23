@@ -89,6 +89,17 @@ class FreeboxParentalCard extends HTMLElement {
     return p ? p.name : String(pid);
   }
 
+  _profileIdsOf(s) {
+    if (Array.isArray(s.profile_ids)) return s.profile_ids;
+    if (s.profile_id != null) return [s.profile_id];
+    return [];
+  }
+
+  _profileNamesOf(s) {
+    const ids = this._profileIdsOf(s);
+    return ids.length ? ids.map((i) => this._profileName(i)).join(", ") : "?";
+  }
+
   // ---- service calls ------------------------------------------------------
   _callSwitch(entity, on) {
     this._hass.callService("switch", on ? "turn_on" : "turn_off", {
@@ -194,7 +205,7 @@ class FreeboxParentalCard extends HTMLElement {
           <div class="sched">
             <div class="sinfo" data-edit="${s.id}">
               <div class="sname">${state} ${s.name}</div>
-              <div class="smeta">${this._profileName(s.profile_id)} · ${(s.cut||"").slice(0,5)} → ${(s.restore||"").slice(0,5)} · ${this._daysSummary(s.days)}</div>
+              <div class="smeta">${this._profileNamesOf(s)} · ${(s.cut||"").slice(0,5)} → ${(s.restore||"").slice(0,5)} · ${this._daysSummary(s.days)}</div>
             </div>
             <div class="sactions">
               <ha-icon class="iconbtn" icon="mdi:pencil" data-edit="${s.id}"></ha-icon>
@@ -214,24 +225,27 @@ class FreeboxParentalCard extends HTMLElement {
     const profiles = this._profiles();
     const f = this._form || {};
     const days = f.days || ["mon", "tue", "wed", "thu", "fri"];
+    const selPids = (f.profile_ids || []).map(String);
     const dayBtns = WEEKDAYS.map(
       (d) =>
         `<button class="day ${days.includes(d) ? "on" : ""}" data-day="${d}">${WEEKDAY_LABELS[d]}</button>`
     ).join("");
-    const profOpts = profiles
+    const profBtns = profiles
       .map(
         (p) =>
-          `<option value="${p.id}" ${String(f.profile_id) === String(p.id) ? "selected" : ""}>${p.name}</option>`
+          `<button class="prof ${selPids.includes(String(p.id)) ? "on" : ""}" data-prof="${p.id}">${p.name}</button>`
       )
       .join("");
     return `
       <div class="editor">
         <label>Nom<input type="text" id="f_name" value="${(f.name || "").replace(/"/g, "&quot;")}" placeholder="Ex. Semaine, Week-end"></label>
-        <label>Profil<select id="f_profile">${profOpts}</select></label>
+        <div class="fieldlabel">Profils concernés</div>
+        <div class="profrow">${profBtns}</div>
         <div class="times">
           <label>Coupure<input type="time" id="f_cut" value="${f.cut || "21:00"}"></label>
           <label>Rétablissement<input type="time" id="f_restore" value="${f.restore || "07:00"}"></label>
         </div>
+        <div class="fieldlabel">Jours</div>
         <div class="dayrow">${dayBtns}</div>
         <label class="chkline"><input type="checkbox" id="f_enabled" ${f.enabled === false ? "" : "checked"}> Activer</label>
         <div class="edbtns">
@@ -268,7 +282,7 @@ class FreeboxParentalCard extends HTMLElement {
     root.querySelectorAll("[data-add]").forEach((el) =>
       el.addEventListener("click", () => {
         this._editing = "new";
-        this._form = { name: "", profile_id: (this._profiles()[0] || {}).id, cut: "21:00", restore: "07:00", days: ["mon","tue","wed","thu","fri"], enabled: true };
+        this._form = { name: "", profile_ids: [], cut: "21:00", restore: "07:00", days: ["mon","tue","wed","thu","fri"], enabled: true };
         this._render(true);
       })
     );
@@ -279,7 +293,7 @@ class FreeboxParentalCard extends HTMLElement {
         if (!s) return;
         this._editing = id;
         this._form = {
-          id: s.id, name: s.name, profile_id: s.profile_id,
+          id: s.id, name: s.name, profile_ids: this._profileIdsOf(s).slice(),
           cut: (s.cut || "21:00").slice(0, 5), restore: (s.restore || "07:00").slice(0, 5),
           days: (s.days || []).slice(), enabled: s.enabled !== false,
         };
@@ -293,6 +307,15 @@ class FreeboxParentalCard extends HTMLElement {
     );
 
     // editor bindings
+    root.querySelectorAll("[data-prof]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        const pid = parseInt(e.currentTarget.getAttribute("data-prof"), 10);
+        const set = new Set((this._form.profile_ids || []).map(Number));
+        if (set.has(pid)) set.delete(pid); else set.add(pid);
+        this._form.profile_ids = [...set];
+        e.currentTarget.classList.toggle("on");
+      })
+    );
     root.querySelectorAll("[data-day]").forEach((el) =>
       el.addEventListener("click", (e) => {
         const d = e.currentTarget.getAttribute("data-day");
@@ -311,14 +334,30 @@ class FreeboxParentalCard extends HTMLElement {
   _onSave() {
     const root = this.shadowRoot;
     const name = root.querySelector("#f_name").value.trim() || "Programmation";
-    const profile_id = parseInt(root.querySelector("#f_profile").value, 10);
+    const profile_ids = (this._form.profile_ids || []).map(Number);
+    if (!profile_ids.length) {
+      this._flash("Sélectionnez au moins un profil.");
+      return;
+    }
     const cut = root.querySelector("#f_cut").value || "21:00";
     const restore = root.querySelector("#f_restore").value || "07:00";
     const enabled = root.querySelector("#f_enabled").checked;
     const days = (this._form.days && this._form.days.length) ? this._form.days : ["mon","tue","wed","thu","fri"];
-    const data = { name, profile_id, cut, restore, enabled, days };
+    const data = { name, profile_ids, cut, restore, enabled, days };
     if (this._editing && this._editing !== "new") data.id = this._editing;
     this._saveSchedule(data);
+  }
+
+  _flash(msg) {
+    const root = this.shadowRoot;
+    let el = root.querySelector(".flash");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "flash";
+      const ed = root.querySelector(".editor");
+      if (ed) ed.appendChild(el);
+    }
+    el.textContent = msg;
   }
 
   _styles() {
@@ -361,6 +400,12 @@ class FreeboxParentalCard extends HTMLElement {
         background:var(--card-background-color); color:var(--primary-text-color); font-size:.9rem; }
       .times { display:flex; gap:10px; }
       .times label { flex:1; }
+      .fieldlabel { font-size:.72rem; color:var(--secondary-text-color); margin-top:-2px; }
+      .profrow { display:flex; gap:5px; flex-wrap:wrap; }
+      .prof { border:1px solid var(--divider-color); background:transparent; color:var(--primary-text-color);
+              border-radius:14px; padding:5px 12px; font-size:.8rem; cursor:pointer; }
+      .prof.on { background:var(--primary-color); color:var(--text-primary-color,#fff); border-color:var(--primary-color); }
+      .flash { color:var(--error-color); font-size:.78rem; }
       .dayrow { display:flex; gap:4px; flex-wrap:wrap; }
       .day { border:1px solid var(--divider-color); background:transparent; color:var(--primary-text-color);
              border-radius:8px; padding:5px 9px; font-size:.75rem; cursor:pointer; }

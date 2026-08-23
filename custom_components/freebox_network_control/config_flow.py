@@ -27,6 +27,7 @@ from .const import (
     CONF_ID,
     CONF_NAME,
     CONF_PROFILE_ID,
+    CONF_PROFILE_IDS,
     CONF_RESTORE,
     CONF_SCHEDULES,
     DEFAULT_HOST,
@@ -183,12 +184,14 @@ class FreeboxOptionsFlow(OptionsFlow):
 
         options = []
         for sched in self._schedules:
+            names = [
+                self._profile_name(p)
+                for p in (sched.get(CONF_PROFILE_IDS) or [])
+            ]
             options.append(
                 {
                     "value": sched[CONF_ID],
-                    "label": schedule_label(
-                        sched, self._profile_name(sched.get(CONF_PROFILE_ID))
-                    ),
+                    "label": schedule_label(sched, names),
                 }
             )
         options.append({"value": ADD, "label": "➕ Ajouter une programmation"})
@@ -224,7 +227,7 @@ class FreeboxOptionsFlow(OptionsFlow):
             data = {
                 CONF_ID: self._editing or new_id(),
                 CONF_NAME: user_input[CONF_NAME],
-                CONF_PROFILE_ID: int(user_input[CONF_PROFILE_ID]),
+                CONF_PROFILE_IDS: [int(p) for p in user_input[CONF_PROFILE_IDS]],
                 CONF_ENABLED: user_input[CONF_ENABLED],
                 CONF_CUT: user_input[CONF_CUT],
                 CONF_RESTORE: user_input[CONF_RESTORE],
@@ -245,11 +248,7 @@ class FreeboxOptionsFlow(OptionsFlow):
             {"value": str(pid), "label": prof.get("name", str(pid))}
             for pid, prof in profiles.items()
         ]
-        default_pid = str(
-            cur.get(CONF_PROFILE_ID)
-            if cur.get(CONF_PROFILE_ID) is not None
-            else (next(iter(profiles), ""))
-        )
+        default_pids = [str(p) for p in (cur.get(CONF_PROFILE_IDS) or [])]
         day_options = [
             {"value": d, "label": WEEKDAY_LABELS_FR[d]} for d in WEEKDAYS
         ]
@@ -258,8 +257,14 @@ class FreeboxOptionsFlow(OptionsFlow):
             vol.Required(
                 CONF_NAME, default=cur.get(CONF_NAME, "Nouvelle programmation")
             ): str,
-            vol.Required(CONF_PROFILE_ID, default=default_pid): selector(
-                {"select": {"options": profile_options, "mode": "dropdown"}}
+            vol.Required(CONF_PROFILE_IDS, default=default_pids): selector(
+                {
+                    "select": {
+                        "options": profile_options,
+                        "multiple": True,
+                        "mode": "list",
+                    }
+                }
             ),
             vol.Required(
                 CONF_ENABLED, default=cur.get(CONF_ENABLED, True)
