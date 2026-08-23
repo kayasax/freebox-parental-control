@@ -18,6 +18,19 @@ Tout fonctionne **en local** sur `http://mafreebox.freebox.fr`. Rien ne passe
 par le cloud Freebox, et le jeton d'application est stocké dans l'entrée de
 configuration.
 
+## Aperçu
+
+L'intégration fournit une **carte de tableau de bord embarquée** : coupez /
+rétablissez Internet par profil, lancez une coupure minutée, et gérez plusieurs
+programmations — le tout depuis un seul écran, sans passer par les Réglages.
+
+![Carte Contrôle parental Freebox](docs/images/card-overview.png)
+
+Une même **programmation peut couvrir plusieurs profils** (ex. tous les enfants,
+21h→7h en semaine), avec un formulaire d'édition clair :
+
+![Éditeur de programmation](docs/images/card-editor.png)
+
 ## Pourquoi cette intégration
 
 L'intégration Freebox officielle du cœur de HA n'expose que l'interrupteur Wi-Fi
