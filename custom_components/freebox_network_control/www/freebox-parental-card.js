@@ -430,13 +430,15 @@ class FreeboxParentalCard extends HTMLElement {
   }
 }
 
-customElements.define("freebox-parental-card", FreeboxParentalCard);
+if (!customElements.get("freebox-parental-card")) {
+  customElements.define("freebox-parental-card", FreeboxParentalCard);
 
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "freebox-parental-card",
-  name: "Freebox Parental Control",
-  description: "Contrôle parental Freebox : profils, coupures et programmations.",
-});
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: "freebox-parental-card",
+    name: "Freebox Parental Control",
+    description: "Contrôle parental Freebox : profils, coupures et programmations.",
+  });
 
-console.info("%c FREEBOX-PARENTAL-CARD ", "background:#e30613;color:#fff;border-radius:3px", "loaded");
+  console.info("%c FREEBOX-PARENTAL-CARD ", "background:#e30613;color:#fff;border-radius:3px", "loaded");
+}
