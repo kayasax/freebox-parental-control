@@ -12,7 +12,14 @@ APP_NAME = "HA Freebox Parental Control"
 APP_VERSION = "1.0.0"
 DEVICE_NAME = "Home Assistant"
 
-DEFAULT_HOST = "http://mafreebox.freebox.fr"
+DEFAULT_MDNS_HOST = "http://mafreebox.freebox.fr"
+# Stable LAN address of the Freebox (default gateway / DHCP server). Probed
+# first during discovery because the mDNS name above can resolve to Free's
+# public portal IP when an external DNS resolver answers.
+LOCAL_GATEWAY = "http://192.168.1.254"
+
+# Kept for backward compatibility with stored config entries / config_flow.
+DEFAULT_HOST = LOCAL_GATEWAY
 
 CONF_HOST = "host"
 CONF_APP_TOKEN = "app_token"
