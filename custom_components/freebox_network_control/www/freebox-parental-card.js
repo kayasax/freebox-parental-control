@@ -22,6 +22,7 @@ class FreeboxParentalCard extends HTMLElement {
     this._form = null;
     this._hass = null;
     this._built = false;
+    this._expanded = new Set(); // profile ids whose device list is open
   }
 
   setConfig(config) {
@@ -87,6 +88,12 @@ class FreeboxParentalCard extends HTMLElement {
   _profileName(pid) {
     const p = this._profiles().find((x) => x.id === pid);
     return p ? p.name : String(pid);
+  }
+
+  _esc(s) {
+    return String(s).replace(/[&<>"]/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])
+    );
   }
 
   _profileIdsOf(s) {
@@ -167,20 +174,36 @@ class FreeboxParentalCard extends HTMLElement {
       const dsE = this._deviceSensorForProfile(p.id);
       const ds = dsE ? this._hass.states[dsE].attributes : {};
       const online = ds.online_count != null ? ds.online_count : 0;
-      const total = ds.devices ? ds.devices.length : 0;
+      const devList = Array.isArray(ds.device_status) ? ds.device_status : [];
+      const total = devList.length || (ds.devices ? ds.devices.length : 0);
+      const open = this._expanded.has(p.id);
       html += `
         <div class="profile">
           <div class="prow">
             <div class="pname">
               <ha-icon icon="mdi:account"></ha-icon>
               <span>${p.name}</span>
-              <span class="badge">${online}/${total} en ligne</span>
+              <button class="badge${devList.length ? " clickable" : ""}${open ? " open" : ""}" ${devList.length ? `data-toggle="${p.id}"` : ""}>
+                ${online}/${total} en ligne${devList.length ? ` <ha-icon icon="mdi:chevron-${open ? "up" : "down"}"></ha-icon>` : ""}
+              </button>
             </div>
             <label class="switch">
               <input type="checkbox" data-sw="${sw}" ${on ? "checked" : ""}>
               <span class="slider"></span>
             </label>
-          </div>
+          </div>`;
+      if (open && devList.length) {
+        const rows = devList
+          .slice()
+          .sort((a, b) => (b.online === a.online ? 0 : b.online ? 1 : -1))
+          .map(
+            (d) =>
+              `<div class="dev"><span class="dot ${d.online ? "on" : "off"}"></span><span class="dname">${this._esc(d.name || d.mac || "?")}</span>${d.mac ? `<span class="dmac">${this._esc(d.mac)}</span>` : ""}</div>`
+          )
+          .join("");
+        html += `<div class="devlist">${rows}</div>`;
+      }
+      html += `
           <div class="cutrow">
             <span class="cutlabel">Couper :</span>
             <button class="chip" data-cut="${sw}" data-min="30">30 min</button>
@@ -268,6 +291,14 @@ class FreeboxParentalCard extends HTMLElement {
   _bind() {
     const root = this.shadowRoot;
 
+    root.querySelectorAll("[data-toggle]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        const pid = parseInt(e.currentTarget.getAttribute("data-toggle"), 10);
+        if (this._expanded.has(pid)) this._expanded.delete(pid);
+        else this._expanded.add(pid);
+        this._render(true);
+      })
+    );
     root.querySelectorAll('input[data-sw]').forEach((el) =>
       el.addEventListener("change", (e) =>
         this._callSwitch(e.target.getAttribute("data-sw"), e.target.checked)
@@ -374,7 +405,19 @@ class FreeboxParentalCard extends HTMLElement {
       .pname { display:flex; align-items:center; gap:8px; font-weight:500; }
       .pname ha-icon { color: var(--secondary-text-color); }
       .badge { font-size:.7rem; color:var(--secondary-text-color); background:var(--secondary-background-color);
-               padding:2px 7px; border-radius:10px; font-weight:400; }
+               padding:2px 7px; border-radius:10px; font-weight:400; border:none; }
+      .badge.clickable { cursor:pointer; display:inline-flex; align-items:center; gap:2px; }
+      .badge.clickable:hover { color:var(--primary-text-color); }
+      .badge.open { color:var(--primary-text-color); }
+      .badge ha-icon { --mdc-icon-size:14px; }
+      .devlist { margin:8px 0 2px; display:flex; flex-direction:column; gap:4px;
+                 border-top:1px dashed var(--divider-color); padding-top:8px; }
+      .dev { display:flex; align-items:center; gap:8px; font-size:.8rem; }
+      .dot { width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+      .dot.on { background:var(--success-color, #4caf50); }
+      .dot.off { background:var(--disabled-text-color, #9e9e9e); }
+      .dname { color:var(--primary-text-color); }
+      .dmac { margin-left:auto; font-size:.68rem; color:var(--secondary-text-color); font-family:monospace; }
       .cutrow { display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
       .cutlabel { font-size:.75rem; color:var(--secondary-text-color); }
       .chip { border:1px solid var(--divider-color); background:transparent; color:var(--primary-text-color);

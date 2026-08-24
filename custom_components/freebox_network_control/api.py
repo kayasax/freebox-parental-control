@@ -2,7 +2,13 @@
 
 Ported from the proven synchronous ``scripts/freebox_bridge.py`` client to
 aiohttp so it can run inside the Home Assistant event loop. Only the local LAN
-API is used (``http://mafreebox.freebox.fr``); nothing goes through the cloud.
+API is used; nothing goes through the cloud.
+
+Discovery is resilient to DNS quirks: ``mafreebox.freebox.fr`` can resolve to
+Free's public portal IP (212.27.38.x) instead of the box when an external
+resolver answers, so :meth:`FreeboxClient.discover` probes several candidate
+hosts (the configured host, the box's default LAN gateway, then the mDNS name)
+and locks onto the first that returns a valid ``api_version`` payload.
 """
 
 from __future__ import annotations
@@ -21,6 +27,8 @@ from .const import (
     APP_VERSION,
     DEVICE_NAME,
     HTTP_TIMEOUT,
+    LOCAL_GATEWAY,
+    DEFAULT_MDNS_HOST,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,10 +121,46 @@ class FreeboxClient:
 
     # ---- discovery ---------------------------------------------------------
     async def discover(self) -> None:
-        info = await self._request("GET", f"{self._host}/api_version")
-        api_base = info["api_base_url"].strip("/")
-        major = "v" + str(info["api_version"]).split(".")[0]
-        self._base = f"{self._host}/{api_base}/{major}"
+        """Locate a reachable Freebox and build the versioned API base URL.
+
+        ``mafreebox.freebox.fr`` is *not* reliable: depending on which DNS
+        resolver answers, it can resolve to Free's public portal IP
+        (212.27.38.x) instead of the box on the LAN, which breaks every call.
+        We therefore probe a list of candidate hosts and lock onto the first
+        one that actually returns a valid Freebox ``api_version`` payload,
+        prioritising the box's stable LAN gateway address.
+        """
+        candidates: list[str] = []
+        for host in (self._host, LOCAL_GATEWAY, DEFAULT_MDNS_HOST):
+            h = (host or "").rstrip("/")
+            if h and h not in candidates:
+                candidates.append(h)
+
+        last_exc: Exception | None = None
+        for host in candidates:
+            try:
+                info = await self._request("GET", f"{host}/api_version")
+                if not (
+                    isinstance(info, dict)
+                    and "api_base_url" in info
+                    and "api_version" in info
+                ):
+                    raise FreeboxError(
+                        f"{host} did not return a Freebox api_version payload"
+                    )
+                api_base = info["api_base_url"].strip("/")
+                major = "v" + str(info["api_version"]).split(".")[0]
+            except Exception as exc:  # noqa: BLE001 - try next candidate
+                last_exc = exc
+                _LOGGER.debug("Freebox not reachable at %s: %s", host, exc)
+                continue
+            self._host = host
+            self._base = f"{self._host}/{api_base}/{major}"
+            _LOGGER.info("Freebox API reachable at %s", self._host)
+            return
+        raise last_exc or FreeboxError(
+            "No Freebox reachable among candidates: " + ", ".join(candidates)
+        )
 
     async def _ensure_base(self) -> None:
         if not self._base:
