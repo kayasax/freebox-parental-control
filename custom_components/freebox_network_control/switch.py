@@ -21,6 +21,10 @@ from .coordinator import FreeboxProfilesCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 SERVICE_CUT_FOR = "cut_for"
+SERVICE_ALLOW_FOR = "allow_for"
+_MINUTES_SCHEMA = {
+    vol.Required("minutes"): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440))
+}
 
 
 async def async_setup_entry(
@@ -37,9 +41,12 @@ async def async_setup_entry(
     # with automatic restore (Freebox override_until).
     platform = entity_platform.async_get_current_platform()
     platform.async_register_entity_service(
-        SERVICE_CUT_FOR,
-        {vol.Required("minutes"): vol.All(vol.Coerce(int), vol.Range(min=1, max=1440))},
-        "async_cut_for",
+        SERVICE_CUT_FOR, _MINUTES_SCHEMA, "async_cut_for"
+    )
+    # Mirror service: temporarily ALLOW Internet (e.g. during a scheduled cut),
+    # the Freebox itself reverts to the schedule once override_until expires.
+    platform.async_register_entity_service(
+        SERVICE_ALLOW_FOR, _MINUTES_SCHEMA, "async_allow_for"
     )
 
 
@@ -112,6 +119,13 @@ class FreeboxProfileSwitch(
         """Cut Internet for a bounded duration, then auto-restore."""
         await self.coordinator.client.set_override(
             self._profile_id, "denied", minutes
+        )
+        await self.coordinator.async_request_refresh()
+
+    async def async_allow_for(self, minutes: int) -> None:
+        """Allow Internet for a bounded duration, then back to the schedule."""
+        await self.coordinator.client.set_override(
+            self._profile_id, "allowed", minutes
         )
         await self.coordinator.async_request_refresh()
 
