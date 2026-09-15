@@ -176,6 +176,25 @@ data:
   minutes: 45
 ```
 
+### Rétablissement temporaire — service `allow_for`
+
+Miroir de `cut_for` : pour **rétablir** Internet sur un profil pendant une durée
+bornée, puis revenir automatiquement à sa programmation, appelez le service
+`freebox_network_control.allow_for`. Utile lorsqu'un profil est coupé par une
+plage horaire (le simple allumage de l'interrupteur ne fait que retirer une
+dérogation manuelle et ne rétablit rien pendant une coupure planifiée) :
+
+```yaml
+service: freebox_network_control.allow_for
+target:
+  entity_id: switch.elyas_internet
+data:
+  minutes: 30
+```
+
+La fin de la dérogation est gérée par la Freebox elle-même (`override_until`),
+elle tient donc même si Home Assistant redémarre.
+
 ### Programmation — depuis la carte (ou les options)
 
 Le plus simple : gérez les programmations **directement sur la carte** (voir
@@ -205,7 +224,7 @@ vacances, aides…).
 ## Feuille de route
 
 - **Phase A** — interrupteurs + capteurs d'appareils, config flow. Fait.
-- **Phase B** — état en ligne par appareil, coupure minutée (`cut_for`),
+- **Phase B** — état en ligne par appareil, coupure minutée (`cut_for`) et rétablissement temporaire (`allow_for`),
   programmation (UI d'options intégrée + blueprint). Fait.
 - **Phase C** — service d'assignation d'appareils, gestion des profils
   (création/suppression), et remontée du support async `network_control` /
