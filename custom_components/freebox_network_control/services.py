@@ -12,6 +12,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.service import async_register_admin_service
 
 from .const import (
     CONF_CUT,
@@ -118,9 +119,9 @@ async def async_register_services(hass: HomeAssistant) -> None:
             entry, options={**dict(entry.options), CONF_SCHEDULES: schedules}
         )
 
-    hass.services.async_register(
-        DOMAIN, SERVICE_SCHEDULE_UPSERT, _upsert, schema=_UPSERT_SCHEMA
+    async_register_admin_service(
+        hass, DOMAIN, SERVICE_SCHEDULE_UPSERT, _upsert, schema=_UPSERT_SCHEMA
     )
-    hass.services.async_register(
-        DOMAIN, SERVICE_SCHEDULE_DELETE, _delete, schema=_DELETE_SCHEMA
+    async_register_admin_service(
+        hass, DOMAIN, SERVICE_SCHEDULE_DELETE, _delete, schema=_DELETE_SCHEMA
     )

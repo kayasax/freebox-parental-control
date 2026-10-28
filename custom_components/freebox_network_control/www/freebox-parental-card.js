@@ -91,8 +91,8 @@ class FreeboxParentalCard extends HTMLElement {
   }
 
   _esc(s) {
-    return String(s).replace(/[&<>"]/g, (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])
+    return String(s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
     );
   }
 
@@ -182,8 +182,8 @@ class FreeboxParentalCard extends HTMLElement {
           <div class="prow">
             <div class="pname">
               <ha-icon icon="mdi:account"></ha-icon>
-              <span>${p.name}</span>
-              <button class="badge${devList.length ? " clickable" : ""}${open ? " open" : ""}" ${devList.length ? `data-toggle="${p.id}"` : ""}>
+              <span>${this._esc(p.name)}</span>
+              <button class="badge${devList.length ? " clickable" : ""}${open ? " open" : ""}" ${devList.length ? `data-toggle="${this._esc(p.id)}"` : ""}>
                 ${online}/${total} en ligne${devList.length ? ` <ha-icon icon="mdi:chevron-${open ? "up" : "down"}"></ha-icon>` : ""}
               </button>
             </div>
@@ -226,13 +226,13 @@ class FreeboxParentalCard extends HTMLElement {
         const state = s.enabled ? "✅" : "⏸️";
         html += `
           <div class="sched">
-            <div class="sinfo" data-edit="${s.id}">
-              <div class="sname">${state} ${s.name}</div>
-              <div class="smeta">${this._profileNamesOf(s)} · ${(s.cut||"").slice(0,5)} → ${(s.restore||"").slice(0,5)} · ${this._daysSummary(s.days)}</div>
+            <div class="sinfo" data-edit="${this._esc(s.id)}">
+              <div class="sname">${state} ${this._esc(s.name)}</div>
+              <div class="smeta">${this._esc(this._profileNamesOf(s))} · ${(s.cut||"").slice(0,5)} → ${(s.restore||"").slice(0,5)} · ${this._daysSummary(s.days)}</div>
             </div>
             <div class="sactions">
-              <ha-icon class="iconbtn" icon="mdi:pencil" data-edit="${s.id}"></ha-icon>
-              <ha-icon class="iconbtn danger" icon="mdi:delete" data-del="${s.id}"></ha-icon>
+              <ha-icon class="iconbtn" icon="mdi:pencil" data-edit="${this._esc(s.id)}"></ha-icon>
+              <ha-icon class="iconbtn danger" icon="mdi:delete" data-del="${this._esc(s.id)}"></ha-icon>
             </div>
           </div>`;
       }
@@ -256,12 +256,12 @@ class FreeboxParentalCard extends HTMLElement {
     const profBtns = profiles
       .map(
         (p) =>
-          `<button class="prof ${selPids.includes(String(p.id)) ? "on" : ""}" data-prof="${p.id}">${p.name}</button>`
+          `<button class="prof ${selPids.includes(String(p.id)) ? "on" : ""}" data-prof="${this._esc(p.id)}">${this._esc(p.name)}</button>`
       )
       .join("");
     return `
       <div class="editor">
-        <label>Nom<input type="text" id="f_name" value="${(f.name || "").replace(/"/g, "&quot;")}" placeholder="Ex. Semaine, Week-end"></label>
+        <label>Nom<input type="text" id="f_name" value="${this._esc(f.name || "")}" placeholder="Ex. Semaine, Week-end"></label>
         <div class="fieldlabel">Profils concernés</div>
         <div class="profrow">${profBtns}</div>
         <div class="times">
