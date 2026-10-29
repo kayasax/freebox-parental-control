@@ -21,6 +21,30 @@ cut_for:
           unit_of_measurement: min
           mode: box
 
+allow_for:
+  name: Allow Internet for a duration
+  description: >-
+    Temporarily allow a profile's Internet access for a bounded number of
+    minutes (for instance during a scheduled cut), then automatically go back
+    to the profile's schedule (uses the Freebox override_until).
+  target:
+    entity:
+      integration: freebox_network_control
+      domain: switch
+  fields:
+    minutes:
+      name: Minutes
+      description: How long to allow Internet before going back to the schedule.
+      required: true
+      example: 30
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: min
+          mode: box
+
 schedule_upsert:
   name: Add or update a cut schedule
   description: >-
