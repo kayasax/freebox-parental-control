@@ -11,6 +11,14 @@
       "authorize": {
         "title": "Validez sur votre Freebox",
         "description": "Regardez l'écran (LCD) en façade de la Freebox et appuyez sur la flèche droite, puis OK pour autoriser l'accès. Cliquez ensuite sur Valider pour continuer."
+      },
+      "reauth_confirm": {
+        "title": "Réauthentifier la Freebox",
+        "description": "La Freebox a refusé le jeton enregistré. Validez pour demander une nouvelle autorisation, puis confirmez-la sur l'écran (LCD) de la Freebox."
+      },
+      "reauth_authorize": {
+        "title": "Validez sur votre Freebox",
+        "description": "Regardez l'écran (LCD) en façade de la Freebox et appuyez sur la flèche droite, puis OK pour autoriser l'accès. Cliquez ensuite sur Valider pour continuer."
       }
     },
     "error": {
@@ -20,7 +28,8 @@
       "authorization_failed": "Autorisation refusée ou expirée. Recommencez la configuration et confirmez sur la box."
     },
     "abort": {
-      "already_configured": "Cette Freebox est déjà configurée."
+      "already_configured": "Cette Freebox est déjà configurée.",
+      "reauth_successful": "Réauthentification réussie."
     }
   },
   "options": {

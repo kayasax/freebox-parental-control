@@ -11,6 +11,14 @@
       "authorize": {
         "title": "Approve on your Freebox",
         "description": "Look at the Freebox front panel (LCD screen) and press the right arrow, then OK to grant access. Then submit to continue."
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Freebox",
+        "description": "The Freebox rejected the stored token. Submit to request a new authorization, then approve it on the Freebox LCD screen."
+      },
+      "reauth_authorize": {
+        "title": "Approve on your Freebox",
+        "description": "Look at the Freebox front panel (LCD screen) and press the right arrow, then OK to grant access. Then submit to continue."
       }
     },
     "error": {
@@ -20,7 +28,8 @@
       "authorization_failed": "Authorization was denied or timed out. Restart the setup and confirm on the box."
     },
     "abort": {
-      "already_configured": "This Freebox is already configured."
+      "already_configured": "This Freebox is already configured.",
+      "reauth_successful": "Re-authentication successful."
     }
   },
   "options": {
