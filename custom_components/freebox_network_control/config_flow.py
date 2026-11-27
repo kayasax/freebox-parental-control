@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -53,6 +54,7 @@ class FreeboxNetworkControlConfigFlow(ConfigFlow, domain=DOMAIN):
         self._host: str = DEFAULT_HOST
         self._client: FreeboxClient | None = None
         self._track_id: str | None = None
+        self._reauth_entry: ConfigEntry | None = None
 
     @staticmethod
     @callback
@@ -131,6 +133,72 @@ class FreeboxNetworkControlConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="authorize",
             errors=errors,
         )
+
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """Start re-authentication when the stored app token is rejected."""
+        self._reauth_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
+        self._host = entry_data[CONF_HOST]
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask the user to approve a new app token, then register it."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            self._client = FreeboxClient(
+                async_get_clientsession(self.hass), self._host
+            )
+            try:
+                self._track_id = await self._client.request_authorization()
+            except FreeboxError as err:
+                _LOGGER.error("Freebox authorization request failed: %s", err)
+                errors["base"] = "cannot_connect"
+            else:
+                return await self.async_step_reauth_authorize()
+
+        return self.async_show_form(step_id="reauth_confirm", errors=errors)
+
+    async def async_step_reauth_authorize(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Poll the Freebox for the LCD approval and store the new token."""
+        assert self._client is not None and self._track_id is not None
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            try:
+                status = await self._client.authorization_status(self._track_id)
+            except FreeboxError as err:
+                _LOGGER.error("Freebox authorization status failed: %s", err)
+                errors["base"] = "cannot_connect"
+                status = "unknown"
+
+            if status == "granted":
+                try:
+                    await self._client.open_session()
+                except FreeboxAuthError as err:
+                    _LOGGER.error("Session with new token failed: %s", err)
+                    errors["base"] = "invalid_auth"
+                else:
+                    entry = self._reauth_entry
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data={
+                            **entry.data,
+                            CONF_APP_TOKEN: self._client.app_token,
+                        },
+                    )
+            elif status == "pending":
+                errors["base"] = "awaiting_confirmation"
+            else:
+                errors["base"] = "authorization_failed"
+
+        return self.async_show_form(step_id="reauth_authorize", errors=errors)
 
 
 class FreeboxOptionsFlow(OptionsFlow):

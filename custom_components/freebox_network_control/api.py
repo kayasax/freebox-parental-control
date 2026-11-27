@@ -239,12 +239,26 @@ class FreeboxClient:
             )
         ).get("result") or {}
 
+    async def _read_for_write(self, profile_id: int) -> dict:
+        """Read the profile's current config; refuse to write on a missing read.
+
+        The PUT replaces the profile's devices and time ranges, so a missing
+        read must never fall back to empty values.
+        """
+        cur = await self.network_control(profile_id)
+        if not cur or "macs" not in cur or "cdayranges" not in cur:
+            raise FreeboxError(
+                f"Could not read network control for profile {profile_id}; "
+                "not modifying it"
+            )
+        return cur
+
     async def set_override(
         self, profile_id: int, mode: str, minutes: int = 0
     ) -> dict:
         """Force a profile's Internet mode. mode = 'denied' (cut) or 'allowed'."""
         await self._ensure_session()
-        cur = await self.network_control(profile_id)
+        cur = await self._read_for_write(profile_id)
         until = 0
         if minutes > 0:
             import time
@@ -252,8 +266,8 @@ class FreeboxClient:
             until = int(time.time()) + minutes * 60
         payload = {
             "profile_id": profile_id,
-            "macs": cur.get("macs") or [],
-            "cdayranges": cur.get("cdayranges") or [],
+            "macs": cur["macs"],
+            "cdayranges": cur["cdayranges"],
             "override": True,
             "override_mode": mode,
             "override_until": until,
@@ -265,11 +279,11 @@ class FreeboxClient:
 
     async def clear_override(self, profile_id: int) -> dict:
         await self._ensure_session()
-        cur = await self.network_control(profile_id)
+        cur = await self._read_for_write(profile_id)
         payload = {
             "profile_id": profile_id,
-            "macs": cur.get("macs") or [],
-            "cdayranges": cur.get("cdayranges") or [],
+            "macs": cur["macs"],
+            "cdayranges": cur["cdayranges"],
             "override": False,
             "override_mode": cur.get("override_mode") or "allowed",
             "override_until": 0,
